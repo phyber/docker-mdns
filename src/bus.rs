@@ -4,6 +4,10 @@ use anyhow::Result;
 use dbus::blocking::Connection;
 use dbus::strings::Path;
 use if_addrs::get_if_addrs;
+use log::{
+    debug,
+    info,
+};
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::time::Duration;
@@ -28,12 +32,14 @@ fn avahi_interface(conn: &Connection, interface: &str) -> Result<i32> {
         (interface,),
     )?;
 
-    println!("Interface: {:?}", res);
+    debug!("avahi_interface for {} is {}", interface, res);
 
     Ok(res)
 }
 
 fn interface_address(interface: &str) -> Result<Vec<IpAddr>> {
+    debug!("Getting interface addresses for {}", interface);
+
     let addrs: Vec<IpAddr> = get_if_addrs()?
         .into_iter()
         .filter(|i| {
@@ -42,7 +48,7 @@ fn interface_address(interface: &str) -> Result<Vec<IpAddr>> {
         .map(|i| i.ip())
         .collect();
 
-    println!("{:#?}", addrs);
+    debug!("{:?}", addrs);
 
     Ok(addrs)
 }
@@ -57,6 +63,8 @@ pub struct Bus<'a> {
 
 impl<'a> Bus<'a> {
     pub fn new(interface: String) -> Result<Self> {
+        info!("Getting D-Bus handle for interface: {}", interface);
+
         let conn = Connection::new_system()?;
         let addresses = interface_address(&interface)?;
         let avahi_interface = avahi_interface(&conn, &interface)?;
@@ -73,7 +81,7 @@ impl<'a> Bus<'a> {
     }
 
     pub fn publish(&mut self, config: &MdnsConfig) -> Result<()> {
-        println!("Publishing host: {:?}", config);
+        info!("Publishing config: {:?}", config);
 
         if !config.enabled() {
             return Ok(());
@@ -90,16 +98,12 @@ impl<'a> Bus<'a> {
             Duration::from_millis(5_000),
         );
 
-        println!("Before EntryGroupNew");
-
         // Get a new group to publish under
         let (group_path,): (Path,) = proxy.method_call(
             INTERFACE_SERVER,
             "EntryGroupNew",
             (),
         )?;
-
-        println!("AfterMethod: {:?}", group_path);
 
         let group = self.conn.with_proxy(
             NAMESPACE_AVAHI,
@@ -108,7 +112,7 @@ impl<'a> Bus<'a> {
         );
 
         for address in &self.addresses {
-            println!("Adding address: {:?}", address);
+            debug!("AddAddress: {:?}", address);
 
             group.method_call(
                 INTERFACE_ENTRY_GROUP,
@@ -129,7 +133,7 @@ impl<'a> Bus<'a> {
             (),
         )?;
 
-        println!("Published for host: {}", host);
+        debug!("Addresses committed");
 
         self.published.insert(host, group_path);
 
@@ -137,7 +141,7 @@ impl<'a> Bus<'a> {
     }
 
     pub fn unpublish(&mut self, config: &MdnsConfig) -> Result<()> {
-        println!("Unpublishing host: {:?}", config);
+        info!("Unpublishing config: {:?}", config);
 
         let host = match config.host() {
             Some(host) => host.to_owned(),
@@ -167,7 +171,7 @@ impl<'a> Bus<'a> {
             (),
         )?;
 
-        println!("Unpublished: {}", host);
+        debug!("Unpublished: {}", host);
 
         Ok(())
     }

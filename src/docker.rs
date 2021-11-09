@@ -8,6 +8,10 @@ use bollard::models::{
 };
 use bollard::system::EventsOptions;
 use futures_core::Stream;
+use log::{
+    debug,
+    info,
+};
 use std::collections::HashMap;
 use super::MdnsConfig;
 
@@ -63,6 +67,8 @@ impl Docker {
     // Perform an initial scan of already running containers at startup time
     // so we can setup any required hostnames right away.
     pub async fn startup_scan(&self) -> Result<Vec<MdnsConfig>> {
+        info!("Performing startup container scan");
+
         let filters = HashMap::from([
             ("label", vec!["docker-mdns.enable=true"]),
             ("status", vec!["running"]),
@@ -75,10 +81,10 @@ impl Docker {
         for container in containers {
             let config = MdnsConfig::from(&container.labels);
 
-            println!("{:?}", config);
-
             hostnames.push(config);
         }
+
+        debug!("Startup container scan found: {:?}", hostnames);
 
         Ok(hostnames)
     }

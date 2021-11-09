@@ -4,6 +4,10 @@
 use anyhow::Result;
 use bollard::models::SystemEventsResponse;
 use futures_util::stream::StreamExt;
+use log::{
+    debug,
+    info,
+};
 use std::env;
 
 mod bus;
@@ -21,6 +25,8 @@ enum Action {
 }
 
 fn handler<'a>(bus: &mut Bus<'a>, event: &SystemEventsResponse) -> Result<()> {
+    debug!("handler event: {:?}", event);
+
     let action = match event.action.as_ref().map(String::as_ref) {
         Some("die")   => Action::Die,
         Some("start") => Action::Start,
@@ -34,17 +40,23 @@ fn handler<'a>(bus: &mut Bus<'a>, event: &SystemEventsResponse) -> Result<()> {
 
     let mdns_config = MdnsConfig::from(&actor.attributes);
 
-    println!("Event: {:?}", event);
-    println!("MdnsConfig: {:?}", mdns_config);
-
     match action {
         Action::Die   => bus.unpublish(&mdns_config),
         Action::Start => bus.publish(&mdns_config),
     }
 }
 
+fn set_default_log_level() {
+    if let Err(_) = env::var("RUST_LOG") {
+        env::set_var("RUST_LOG", "docker_mdns=info");
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
+    set_default_log_level();
+    pretty_env_logger::init();
+
     let interface = match env::args().nth(1) {
         Some(interface) => interface,
         None            => {
@@ -53,7 +65,7 @@ async fn main() -> Result<()> {
         }
     };
 
-    println!("Interface: {:?}", interface);
+    info!("Interface: {:?}", interface);
 
     // Get a dbus connection
     let mut bus = Bus::new(interface)?;
