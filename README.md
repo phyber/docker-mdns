@@ -1,6 +1,6 @@
-# Docker Avahi
+# Docker mDNS
 
-Docker Avahi registers hostnames with Avahi based on labels given to a
+Docker mDNS registers hostnames with Avahi based on labels given to a
 container. This allows each container to have a unique `hostname.local`
 assigned to it, which should help when reverse proxying from tools like
 Traefik or NGINX.
@@ -8,7 +8,7 @@ Traefik or NGINX.
 ## Configuration
 
 The following is an example of a `docker-compose.yaml` file configuring a
-container to use Docker Avahi:
+container to use Docker mDNS:
 
 ```yaml
 ---
