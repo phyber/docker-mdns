@@ -53,7 +53,7 @@ jobs:
         run: |
           make image${{ matrix.arch }}
 
-          echo "::set-output name=image_name::${IMAGE_NAME}:${{ matrix.arch }}"
+          echo "::set-output name=image_name::${IMAGE_NAME}"
 
       - name: "Registry Login"
         run: |
@@ -80,5 +80,10 @@ jobs:
           echo IMAGE_ID="${IMAGE_ID}"
           echo VERSION="${VERSION}"
 
+          # Tag
+          docker tag "${IMAGE_NAME}" "${IMAGE_ID}:${{ matrix.arch }}"
           docker tag "${IMAGE_NAME}" "${IMAGE_ID}:${VERSION}"
 
+          # Push
+          docker push "${IMAGE_ID}:${{ matrix.arch }}"
+          docker push "${IMAGE_ID}:${VERSION}"
