@@ -37,8 +37,10 @@ jobs:
 
       - name: "Install Rust Toolchain"
         uses: "actions-rs/toolchain@v1"
-        toolchain: "stable"
-        override: true
+        with:
+          override: true
+          profile: "minimal"
+          toolchain: "stable"
 
       - name: "Install Cross"
         run: |
