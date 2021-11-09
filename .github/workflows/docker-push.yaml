@@ -10,6 +10,7 @@ on:
 
 jobs:
   push:
+    name: "Docker Push"
     runs-on: "ubuntu-latest"
     permissions:
       packages: "write"
@@ -26,7 +27,24 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: "Build ${{ matrix.arch }}"
+      - name: "Target Cache"
+        uses: "actions/cache@v1"
+        env:
+          cache-name: "target-cache"
+        with:
+          path: "target"
+          key: "stable-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}"
+
+      - name: "Install Rust Toolchain"
+        uses: "actions-rs/toolchain@v1"
+        toolchain: "stable"
+        override: true
+
+      - name: "Install Cross"
+        run: |
+          cargo install cross
+
+      - name: "Build"
         id: "build"
         env:
           IMAGE_NAME: "docker-mdns"
