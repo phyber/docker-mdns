@@ -74,16 +74,18 @@ jobs:
           fi
 
           if [ "${VERSION}" == "main" ]; then
-            VERSION="latest"
+            VERSION="${{ matrix.arch }}-latest"
           fi
 
           echo IMAGE_ID="${IMAGE_ID}"
           echo VERSION="${VERSION}"
 
           # Tag
+          echo "Tagging"
           docker tag "${IMAGE_NAME}" "${IMAGE_ID}:${{ matrix.arch }}"
           docker tag "${IMAGE_NAME}" "${IMAGE_ID}:${VERSION}"
 
           # Push
+          echo "Pushing"
           docker push "${IMAGE_ID}:${{ matrix.arch }}"
           docker push "${IMAGE_ID}:${VERSION}"
