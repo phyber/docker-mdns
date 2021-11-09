@@ -76,16 +76,13 @@ impl Docker {
 
         let containers = self.list_containers(filters).await?;
 
-        let mut hostnames = Vec::new();
+        let configs = containers
+            .iter()
+            .map(|container| MdnsConfig::from(&container.labels))
+            .collect();
 
-        for container in containers {
-            let config = MdnsConfig::from(&container.labels);
+        debug!("Startup container scan found: {:?}", configs);
 
-            hostnames.push(config);
-        }
-
-        debug!("Startup container scan found: {:?}", hostnames);
-
-        Ok(hostnames)
+        Ok(configs)
     }
 }
