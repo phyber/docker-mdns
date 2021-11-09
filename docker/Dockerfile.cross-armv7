@@ -1,0 +1,11 @@
+# vim:ft=dockerfile:
+ARG TARGET
+FROM rustembedded/cross:${TARGET}
+
+ARG ARCH
+RUN dpkg --add-architecture ${ARCH} \
+    && apt-get update \
+    && apt-get install --assume-yes \
+        libdbus-1-dev \
+        libdbus-1-dev:${ARCH} \
+        pkg-config

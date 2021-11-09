@@ -1,0 +1,8 @@
+# vim:ft=dockerfile:
+ARG PLATFORM
+FROM --platform=linux/${PLATFORM} debian:bullseye-20211011-slim
+
+ARG TARGET
+COPY target/${TARGET}/release/docker-mdns /usr/local/bin/
+
+ENTRYPOINT ["docker-mdns"]

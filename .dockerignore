@@ -1,0 +1,3 @@
+target/
+!target/armv7-unknown-linux-gnueabihf/release/docker-mdns
+!target/x86_64-unknown-linux-gnu/release/docker-mdns

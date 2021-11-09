@@ -1,0 +1,10 @@
+# vim:ft=dockerfile:
+# Build the project
+FROM --platform=linux/amd64 rust:1.56.1-slim-bullseye
+
+RUN apt-get update \
+    && apt-get install \
+        --assume-yes \
+        --no-install-recommends \
+        libdbus-1-dev \
+        pkg-config
