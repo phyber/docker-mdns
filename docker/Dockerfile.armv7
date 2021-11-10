@@ -2,6 +2,10 @@
 ARG PLATFORM
 FROM --platform=linux/${PLATFORM} debian:bullseye-20211011-slim
 
+RUN apt-get update \
+    && apt-get install --assume-yes \
+        libdbus1-3
+
 ARG TARGET
 COPY target/${TARGET}/release/docker-mdns /usr/local/bin/
 
