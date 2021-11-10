@@ -1,6 +1,5 @@
 # vim:ft=dockerfile:
-ARG PLATFORM
-FROM --platform=linux/${PLATFORM} debian:bullseye-20211011-slim
+FROM debian:bullseye-20211011-slim
 
 ARG ARCH
 RUN dpkg --add-architecture ${ARCH} \
