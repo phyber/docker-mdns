@@ -5,7 +5,9 @@ FROM rustembedded/cross:${TARGET}
 ARG ARCH
 RUN dpkg --add-architecture ${ARCH} \
     && apt-get update \
-    && apt-get install --assume-yes \
+    && apt-get install \
+        --assume-yes \
+        --no-install-recommends \
         libdbus-1-dev \
         libdbus-1-dev:${ARCH} \
         pkg-config

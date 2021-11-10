@@ -37,6 +37,7 @@ imagearmv7: armv7
 	@$(ECHO) "Building $(PROJECT) image"
 
 	@$(DOCKER) build \
+		--build-arg ARCH=$(ARCH_ARMV7) \
 		--build-arg PLATFORM=$(PLATFORM_ARMV7) \
 		--build-arg TARGET=$(TARGET_ARMV7) \
 		--file docker/Dockerfile.$(ARMV7) \
