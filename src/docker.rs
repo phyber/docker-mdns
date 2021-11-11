@@ -69,9 +69,11 @@ impl Docker {
     pub async fn startup_scan(&self) -> Result<Vec<MdnsConfig>> {
         info!("Performing startup container scan");
 
+        // We want to setup hostnames for any container that's in any kind of
+        // "up" state.
         let filters = HashMap::from([
             ("label", vec!["docker-mdns.enable=true"]),
-            ("status", vec!["running"]),
+            ("status", vec!["created", "paused", "restarting", "running"]),
         ]);
 
         let containers = self.list_containers(filters).await?;
