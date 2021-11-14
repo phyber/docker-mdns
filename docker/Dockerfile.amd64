@@ -2,7 +2,16 @@
 ARG PLATFORM
 FROM --platform=linux/${PLATFORM} debian:bullseye-20211011-slim
 
+RUN useradd \
+    --create-home \
+    --uid 1000 \
+    --shell /bin/bash \
+    docker-mdns
+
 ARG TARGET
 COPY target/${TARGET}/release/docker-mdns /usr/local/bin/
+
+USER docker-mdns
+WORKDIR /home/docker-mdns
 
 ENTRYPOINT ["docker-mdns"]

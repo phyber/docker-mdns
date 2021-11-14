@@ -1,15 +1,24 @@
 # vim:ft=dockerfile:
 FROM debian:bullseye-20211011-slim
 
+# Install necessary packages and create a non-root user.
 ARG ARCH
 RUN dpkg --add-architecture ${ARCH} \
     && apt-get update \
     && apt-get install \
         --assume-yes \
         --no-install-recommends \
-        libdbus-1-3:${ARCH}
+        libdbus-1-3:${ARCH} \
+    && useradd \
+        --create-home \
+        --uid 1000 \
+        --shell /bin/bash \
+        docker-mdns
 
 ARG TARGET
 COPY target/${TARGET}/release/docker-mdns /usr/local/bin/
+
+USER docker-mdns
+WORKDIR /home/docker-mdns
 
 ENTRYPOINT ["docker-mdns"]
