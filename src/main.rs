@@ -81,6 +81,8 @@ async fn main() -> Result<()> {
     }
 
     // Now we listen for Docker events
+    info!("Entering main Docker events loop");
+
     let mut events = docker.events();
 
     while let Some(event) = events.next().await {

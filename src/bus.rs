@@ -19,25 +19,12 @@ const INTERFACE_SERVER: &str = "org.freedesktop.Avahi.Server";
 const NAMESPACE_AVAHI: &str = "org.freedesktop.Avahi";
 const PROTO_UNSPEC: i32 = -1;
 
-fn avahi_interface(conn: &Connection, interface: &str) -> Result<i32> {
-    let proxy = conn.with_proxy(
-        NAMESPACE_AVAHI,
-        Path::from("/"),
-        Duration::from_millis(5_000),
-    );
-
-    let (res,): (i32,) = proxy.method_call(
-        INTERFACE_SERVER,
-        "GetNetworkInterfaceIndexByName",
-        (interface,),
-    )?;
-
-    debug!("avahi_interface for {} is {}", interface, res);
-
-    Ok(res)
-}
-
-fn interface_address(interface: &str) -> Result<Vec<IpAddr>> {
+// Returns a Vec of IpAddr for the given interface.
+//
+// We only call this once when getting our Bus handle, but we should probably
+// call it each time we publish, as interface addresses may change and listing
+// IP addresses should be a fairly cheap operation.
+fn interface_addresses(interface: &str) -> Result<Vec<IpAddr>> {
     debug!("Getting interface addresses for {}", interface);
 
     let addrs: Vec<IpAddr> = get_if_addrs()?
@@ -66,8 +53,8 @@ impl<'a> Bus<'a> {
         info!("Getting D-Bus handle for interface: {}", interface);
 
         let conn = Connection::new_system()?;
-        let addresses = interface_address(&interface)?;
-        let avahi_interface = avahi_interface(&conn, &interface)?;
+        let addresses = interface_addresses(&interface)?;
+        let avahi_interface = Self::avahi_interface(&conn, &interface)?;
 
         let bus = Self {
             conn: conn,
@@ -78,6 +65,29 @@ impl<'a> Bus<'a> {
         };
 
         Ok(bus)
+    }
+
+    // Gets the avahi interface index.
+    // Doesn't act on `self` as we need this number before we're constructed
+    // an instance of Self.
+    fn avahi_interface(conn: &Connection, interface: &str) -> Result<i32> {
+        info!("Getting Avahi Interface number for: {}", interface);
+
+        let proxy = conn.with_proxy(
+            NAMESPACE_AVAHI,
+            Path::from("/"),
+            Duration::from_millis(5_000),
+        );
+
+        let (res,): (i32,) = proxy.method_call(
+            INTERFACE_SERVER,
+            "GetNetworkInterfaceIndexByName",
+            (interface,),
+        )?;
+
+        debug!("avahi_interface for {} is {}", interface, res);
+
+        Ok(res)
     }
 
     pub fn publish(&mut self, config: &MdnsConfig) -> Result<()> {
