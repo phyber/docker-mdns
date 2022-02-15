@@ -47,7 +47,7 @@ fn handler<'a>(bus: &mut Bus<'a>, event: &SystemEventsResponse) -> Result<()> {
 }
 
 fn set_default_log_level() {
-    if let Err(_) = env::var("RUST_LOG") {
+    if env::var("RUST_LOG").is_err() {
         env::set_var("RUST_LOG", "docker_mdns=info");
     }
 }
