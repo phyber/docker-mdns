@@ -10,7 +10,7 @@ chrono = "0.4"
 dbus = "0.9"
 futures-core = "0.3"
 futures-util = "0.3"
-if-addrs = "0.6"
+if-addrs = "0.7"
 log = "0.4"
 pretty_env_logger = "0.4"
 
