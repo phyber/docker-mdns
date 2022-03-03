@@ -29,9 +29,7 @@ fn interface_addresses(interface: &str) -> Result<Vec<IpAddr>> {
 
     let addrs: Vec<IpAddr> = get_if_addrs()?
         .into_iter()
-        .filter(|i| {
-            !i.addr.is_loopback() && i.name == interface
-        })
+        .filter(|i| !i.addr.is_loopback() && i.name == interface)
         .map(|i| i.ip())
         .collect();
 

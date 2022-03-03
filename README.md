@@ -5,6 +5,10 @@ container. This allows each container to have a unique `hostname.local`
 assigned to it, which should help when reverse proxying from tools like
 Traefik or NGINX.
 
+## Minimum Supported Rust Version (MSRV)
+
+The MSRV for this project is currently v1.56.1
+
 ## Configuration
 
 The following is an example of a `docker-compose.yaml` file to run Docker mDNS
