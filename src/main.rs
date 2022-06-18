@@ -2,7 +2,7 @@
 #![allow(clippy::redundant_field_names)]
 #![forbid(unsafe_code)]
 use anyhow::Result;
-use bollard::models::SystemEventsResponse;
+use bollard::models::EventMessage;
 use futures_util::stream::StreamExt;
 use log::{
     debug,
@@ -24,7 +24,7 @@ enum Action {
     Start,
 }
 
-fn handler<'a>(bus: &mut Bus<'a>, event: &SystemEventsResponse) -> Result<()> {
+fn handler<'a>(bus: &mut Bus<'a>, event: &EventMessage) -> Result<()> {
     debug!("handler event: {:?}", event);
 
     let action = match event.action.as_ref().map(String::as_ref) {

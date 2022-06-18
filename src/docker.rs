@@ -3,8 +3,8 @@ use anyhow::Result;
 use bollard::container::ListContainersOptions;
 use bollard::errors::Error;
 use bollard::models::{
-    ContainerSummaryInner,
-    SystemEventsResponse,
+    ContainerSummary,
+    EventMessage,
 };
 use bollard::system::EventsOptions;
 use futures_core::Stream;
@@ -31,7 +31,7 @@ impl Docker {
     }
 
     pub fn events(&self)
-    -> impl Stream<Item = ::std::result::Result<SystemEventsResponse, Error>> {
+    -> impl Stream<Item = ::std::result::Result<EventMessage, Error>> {
         // We're only interested in container events.
         let filters = HashMap::from([
             ("type".into(), vec!["container".into()]),
@@ -50,7 +50,7 @@ impl Docker {
         &self,
         filters: HashMap<&str, Vec<&str>>,
     )
-    -> Result<Vec<ContainerSummaryInner>> {
+    -> Result<Vec<ContainerSummary>> {
         let options = ListContainersOptions {
             all: true,
             filters: filters,
