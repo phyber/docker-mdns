@@ -2,6 +2,13 @@ DOCKER := docker
 ECHO := echo
 PROJECT := docker-mdns
 
+# AARCH64
+ARCH_AARCH64 := aarch64
+AARCH64 := aarch64
+PLATFORM_AARCH64 := aarch64
+TAG_AARCH64 := rustcross:dbus-$(AARCH64)
+TARGET_AARCH64 := aarch64-unknown-linux-gnu
+
 # AMD64
 ARCH_AMD64 := amd64
 AMD64 := amd64
@@ -58,7 +65,7 @@ amd64: crossamd64
 	@$(PWD)/cross.sh $(AMD64)
 
 imageamd64: amd64
-	@$(ECHO) "Buildin $(PROJECT) image for $(PLATFORM_AMD64)"
+	@$(ECHO) "Building $(PROJECT) image for $(PLATFORM_AMD64)"
 
 	@$(DOCKER) build \
 		--build-arg PLATFORM=$(PLATFORM_AMD64) \
@@ -66,3 +73,29 @@ imageamd64: amd64
 		--file docker/Dockerfile.$(AMD64) \
 		--tag "docker-mdns:$(AMD64)" \
 		.
+
+crossaarch64:
+	@$(ECHO) "Creating docker image: $(TAG_AARCH64)"
+
+	@$(DOCKER) build \
+		--build-arg ARCH=$(ARCH_AARCH64) \
+		--build-arg TARGET=$(TARGET_AARCH64) \
+		--file docker/Dockerfile.cross-$(AARCH64) \
+		--tag $(TAG_AARCH64) \
+		docker/
+
+aarch64: crossaarch64
+	@$(ECHO) "Building $(PROJECT)"
+	@$(PWD)/cross.sh $(AARCH64)
+
+imageaarch64: aarch64
+	@$(ECHO) "Building $(PROJECT) image for $(PLATFORM_AARCH64)"
+
+	@$(DOCKER) build \
+		--build-arg PLATFORM=$(PLATFORM_AARCH64) \
+		--build-arg TARGET=$(TARGET_AARCH64) \
+		--file docker/Dockerfile.$(AARCH64) \
+		--tag "docker-mdns:$(AARCH64) \
+		.
+
+

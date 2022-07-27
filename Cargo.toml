@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0"
-bollard = "0.12"
+bollard = "0.13"
 chrono = "0.4"
 dbus = "0.9"
 futures-core = "0.3"
