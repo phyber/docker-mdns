@@ -1,6 +1,6 @@
 # vim:ft=dockerfile:
 # Build the project
-FROM --platform=linux/amd64 rust:1.56.1-slim-bullseye
+FROM --platform=linux/amd64 rust:1.62.1-slim-bullseye
 
 RUN apt-get update \
     && apt-get install \
