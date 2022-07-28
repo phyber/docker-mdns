@@ -29,12 +29,10 @@ jobs:
           fetch-depth: 1
 
       - name: "Target Cache"
-        uses: "actions/cache@v1"
-        env:
-          cache-name: "target-cache"
+        uses: "actions/cache@v3"
         with:
           path: "target"
-          key: "stable-${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('Cargo.lock') }}"
+          key: "stable-${{ runner.os }}-target-${{ matrix.arch }}-${{ hashFiles('Cargo.lock') }}"
 
       - name: "Install Rust Toolchain"
         uses: "actions-rs/toolchain@v1"
