@@ -3,7 +3,7 @@ ECHO := echo
 PROJECT := docker-mdns
 
 # AARCH64
-ARCH_AARCH64 := aarch64
+ARCH_AARCH64 := arm64
 AARCH64 := aarch64
 PLATFORM_AARCH64 := aarch64
 TAG_AARCH64 := rustcross:dbus-$(AARCH64)
