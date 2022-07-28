@@ -2,6 +2,9 @@ DOCKER := docker
 ECHO := echo
 PROJECT := docker-mdns
 
+# The version of Debian used in the final generated images
+DEBIAN_VERSION := bullseye-20220711-slim
+
 # AARCH64
 ARCH_AARCH64 := arm64
 AARCH64 := aarch64
@@ -45,6 +48,7 @@ imagearmv7: armv7
 
 	@$(DOCKER) build \
 		--build-arg ARCH=$(ARCH_ARMV7) \
+		--build-arg DEBIAN_VERSION=$(DEBIAN_VERSION) \
 		--build-arg TARGET=$(TARGET_ARMV7) \
 		--file docker/Dockerfile.$(ARMV7) \
 		--tag docker-mdns:$(ARMV7) \
@@ -68,6 +72,7 @@ imageamd64: amd64
 	@$(ECHO) "Building $(PROJECT) image for $(PLATFORM_AMD64)"
 
 	@$(DOCKER) build \
+		--build-arg DEBIAN_VERSION=$(DEBIAN_VERSION) \
 		--build-arg PLATFORM=$(PLATFORM_AMD64) \
 		--build-arg TARGET=$(TARGET_AMD64) \
 		--file docker/Dockerfile.$(AMD64) \
@@ -92,7 +97,8 @@ imageaarch64: aarch64
 	@$(ECHO) "Building $(PROJECT) image for $(PLATFORM_AARCH64)"
 
 	@$(DOCKER) build \
-		--build-arg PLATFORM=$(PLATFORM_AARCH64) \
+		--build-arg ARCH=$(ARCH_AARCH64) \
+		--build-arg DEBIAN_VERSION=$(DEBIAN_VERSION) \
 		--build-arg TARGET=$(TARGET_AARCH64) \
 		--file docker/Dockerfile.$(AARCH64) \
 		--tag docker-mdns:$(AARCH64) \
