@@ -47,7 +47,7 @@ imagearmv7: armv7
 		--build-arg ARCH=$(ARCH_ARMV7) \
 		--build-arg TARGET=$(TARGET_ARMV7) \
 		--file docker/Dockerfile.$(ARMV7) \
-		--tag "docker-mdns:$(ARMV7)" \
+		--tag docker-mdns:$(ARMV7) \
 		.
 
 crossamd64:
@@ -71,7 +71,7 @@ imageamd64: amd64
 		--build-arg PLATFORM=$(PLATFORM_AMD64) \
 		--build-arg TARGET=$(TARGET_AMD64) \
 		--file docker/Dockerfile.$(AMD64) \
-		--tag "docker-mdns:$(AMD64)" \
+		--tag docker-mdns:$(AMD64) \
 		.
 
 crossaarch64:
@@ -95,7 +95,5 @@ imageaarch64: aarch64
 		--build-arg PLATFORM=$(PLATFORM_AARCH64) \
 		--build-arg TARGET=$(TARGET_AARCH64) \
 		--file docker/Dockerfile.$(AARCH64) \
-		--tag "docker-mdns:$(AARCH64)" \
+		--tag docker-mdns:$(AARCH64) \
 		.
-
-
