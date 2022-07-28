@@ -95,7 +95,7 @@ imageaarch64: aarch64
 		--build-arg PLATFORM=$(PLATFORM_AARCH64) \
 		--build-arg TARGET=$(TARGET_AARCH64) \
 		--file docker/Dockerfile.$(AARCH64) \
-		--tag "docker-mdns:$(AARCH64) \
+		--tag "docker-mdns:$(AARCH64)" \
 		.
 
 
