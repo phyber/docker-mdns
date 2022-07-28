@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+# AARCH64
+TARGET_ARCH_AARCH64="aarch64-unknown-linux-gnu"
+LINK_FLAGS_AARCH64="-L /usr/aarch64-linux-gnu/lib -L /usr/lib/aarch64-linux-gnu"
+
 # AMD64
 TARGET_ARCH_AMD64="x86_64-unknown-linux-gnu"
 LINK_FLAGS_AMD64=""
@@ -25,6 +29,10 @@ main() {
     local link_flags
 
     case "${target}" in
+        "aarch64")
+            target_arch="${TARGET_ARCH_AARCH64}"
+            link_flags="${LINK_FLAGS_AARCH64}"
+            ;;
         "amd64")
             target_arch="${TARGET_ARCH_AMD64}"
             link_flags="${LINK_FLAGS_AMD64}"
