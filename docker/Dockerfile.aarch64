@@ -8,7 +8,8 @@ RUN dpkg --add-architecture ${ARCH} \
     && apt-get install \
         --assume-yes \
         --no-install-recommends \
-        libdbus-1-3:${ARCH}
+        libdbus-1-3:${ARCH} \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG TARGET
 COPY target/${TARGET}/release/docker-mdns /usr/local/bin/

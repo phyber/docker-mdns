@@ -10,4 +10,5 @@ RUN dpkg --add-architecture ${ARCH} \
         --no-install-recommends \
         libdbus-1-dev \
         libdbus-1-dev:${ARCH} \
-        pkg-config
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/*

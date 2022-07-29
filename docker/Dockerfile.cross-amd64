@@ -7,4 +7,5 @@ RUN apt-get update \
         --assume-yes \
         --no-install-recommends \
         libdbus-1-dev \
-        pkg-config
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/*
