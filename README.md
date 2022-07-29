@@ -7,7 +7,7 @@ Traefik or NGINX.
 
 ## Minimum Supported Rust Version (MSRV)
 
-The MSRV for this project is currently v1.56.1
+The MSRV for this project is currently v1.60.0
 
 ## Configuration
 
