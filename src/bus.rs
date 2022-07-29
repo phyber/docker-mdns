@@ -40,7 +40,6 @@ fn interface_addresses(interface: &str) -> Result<Vec<IpAddr>> {
 
 pub struct Bus<'a> {
     conn: Connection,
-    addresses: Vec<IpAddr>,
     interface: i32,
     interface_name: String,
     published: HashMap<String, Path<'a>>,
@@ -51,12 +50,10 @@ impl<'a> Bus<'a> {
         info!("Getting D-Bus handle for interface: {}", interface);
 
         let conn = Connection::new_system()?;
-        let addresses = interface_addresses(&interface)?;
         let avahi_interface = Self::avahi_interface(&conn, &interface)?;
 
         let bus = Self {
             conn: conn,
-            addresses: addresses,
             interface: avahi_interface,
             interface_name: interface,
             published: HashMap::new(),
@@ -96,7 +93,7 @@ impl<'a> Bus<'a> {
         }
 
         let host = match config.host() {
-            Some(host) => host.to_owned(),
+            Some(host) => host.clone(),
             None       => return Ok(()),
         };
 
@@ -119,7 +116,10 @@ impl<'a> Bus<'a> {
             Duration::from_millis(5_000),
         );
 
-        for address in &self.addresses {
+        // Addresses could change between publishes, so we get them each time.
+        let addresses = interface_addresses(&self.interface_name)?;
+
+        for address in &addresses {
             debug!("AddAddress: {:?}", address);
 
             group.method_call(
@@ -152,7 +152,7 @@ impl<'a> Bus<'a> {
         info!("Unpublishing config: {:?}", config);
 
         let host = match config.host() {
-            Some(host) => host.to_owned(),
+            Some(host) => host.clone(),
             None       => return Ok(()),
         };
 
