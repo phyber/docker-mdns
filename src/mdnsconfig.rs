@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 const DOCKER_MDNS_ENABLE: &str = "docker-mdns.enable";
 const DOCKER_MDNS_HOST: &str = "docker-mdns.host";
+const DOCKER_MDNS_INTERFACE: &str = "docker-mdns.interface";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum MdnsState {
@@ -28,6 +29,7 @@ impl From<Option<&String>> for MdnsState {
 #[derive(Debug, Default)]
 pub struct MdnsConfig {
     host: Option<String>,
+    interface: Option<String>,
     state: MdnsState,
 }
 
@@ -39,6 +41,10 @@ impl MdnsConfig {
     pub fn host(&self) -> Option<&String> {
         self.host.as_ref()
     }
+
+    pub fn interface(&self) -> Option<&String> {
+        self.interface.as_ref()
+    }
 }
 
 impl From<&Option<HashMap<String, String>>> for MdnsConfig {
@@ -47,12 +53,14 @@ impl From<&Option<HashMap<String, String>>> for MdnsConfig {
             None => MdnsConfig::default(),
             Some(attributes) => {
                 let enable = attributes.get(DOCKER_MDNS_ENABLE);
-                let state = MdnsState::from(enable);
                 let host = attributes.get(DOCKER_MDNS_HOST);
+                let interface = attributes.get(DOCKER_MDNS_INTERFACE);
+                let state = MdnsState::from(enable);
 
                 Self {
-                    state: state,
                     host: host.cloned(),
+                    interface: interface.cloned(),
+                    state: state,
                 }
             }
         }

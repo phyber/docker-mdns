@@ -11,27 +11,47 @@ The MSRV for this project is currently v1.60.0
 
 ## Configuration
 
+Docker mDNS takes a single command line argument which is the host interface
+that it should use to find addresses to announce.  For example, if you launch
+it as `docker-mdns eth0` and `eth0` has the IP address `10.20.30.40` this will
+be the IP address used when when replying to mDNS queries.
+
+Docker mDNS will attempt to find all IP (v4 and v6) addresses on an interface,
+as long as they aren't loopback addresses.
+
+The rest of the Docker mDNS configuration is done through labels. The supported
+labels are:
+
+| Label                   | Default | Description                     |
+|-------------------------|---------|---------------------------------|
+| `docker-mdns.enable`    | `false` | Enable mDNS for the container   |
+| `docker-mdns.host`      | `None`  | Hostname to announce            |
+| `docker-mdns.interface` | `None`  | Interface to get addresses from |
+
+Providing `docker-mdns.interface` will override which interface Docker mDNS
+uses when finding IP addresses to announce for the `docker-mdns.host`.
+
 The following is an example of a `docker-compose.yaml` file to run Docker mDNS
 in a container:
 
 ```yaml
 ---
-version: "3"
+version: "3.8"
 
 services:
   mdns:
     container_name: "docker-mdns"
-    image: "phyber/docker-mdns:armv7-latest"
+    image: "phyber/docker-mdns:aarch64-latest"
 
     # We need to be able to see the real IP addresses on the host, so we need
     # host networking mode.
-    network_mode: 'host'
+    network_mode: "host"
 
     # Set this to the name of the interface with the IP addresses you'd like to
     # announce for your hostnames.
     # Both IPv4 and IPv6 addresses will be used.
     command:
-      - 'eth0'
+      - "eth0"
 
     # We need to be able to read docker.sock to watch for container events,
     # and we need to be able to write to the system d-bus socket to add
@@ -46,24 +66,24 @@ configured mDNS hostname:
 
 ```yaml
 ---
-version: "3"
+version: "3.8"
 
 services:
   traefik:
     container_name: "traefik"
-    image: "traefik:v2.5"
+    image: "traefik:v2.8.1"
     restart: "unless-stopped"
     command:
+      - "--entrypoints.web.address=:80"
       - "--providers.docker=true"
       - "--providers.docker.exposebydefault=false"
-      - "--entrypoints.web.address=:80"
     labels:
-      - "docker-mdns.enable=true"
-      - "docker-mdns.host=traefik.local"
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.endpoints=web"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.local`)"
-      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      docker-mdns.enable: "true"
+      docker-mdns.host: "traefik.local"
+      traefik.enable: "true"
+      traefik.http.routers.traefik.endpoints: "web"
+      traefik.http.routers.traefik.rule: "Host(`traefik.local`)"
+      traefik.http.services.traefik.loadbalancer.server.port: "8080"
     ports:
       - "80:80"
       - "8080:8080"

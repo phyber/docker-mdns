@@ -25,7 +25,7 @@ const PROTO_UNSPEC: i32 = -1;
 // call it each time we publish, as interface addresses may change and listing
 // IP addresses should be a fairly cheap operation.
 fn interface_addresses(interface: &str) -> Result<Vec<IpAddr>> {
-    debug!("Getting interface addresses for {}", interface);
+    info!("Getting interface addresses for {}", interface);
 
     let addrs: Vec<IpAddr> = get_if_addrs()?
         .into_iter()
@@ -116,8 +116,10 @@ impl<'a> Bus<'a> {
             Duration::from_millis(5_000),
         );
 
+        let interface = config.interface().unwrap_or(&self.interface_name);
+
         // Addresses could change between publishes, so we get them each time.
-        let addresses = interface_addresses(&self.interface_name)?;
+        let addresses = interface_addresses(interface)?;
 
         for address in &addresses {
             debug!("AddAddress: {:?}", address);
