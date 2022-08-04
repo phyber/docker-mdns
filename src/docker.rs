@@ -34,7 +34,7 @@ impl Docker {
     -> impl Stream<Item = ::std::result::Result<EventMessage, Error>> {
         // We're only interested in container events.
         let filters = HashMap::from([
-            ("type".into(), vec!["container".into()]),
+            ("type".to_string(), vec!["container".to_string()]),
         ]);
 
         let options = EventsOptions::<String> {
