@@ -10,27 +10,29 @@ use log::{
 };
 use std::env;
 
+mod action;
 mod bus;
 mod docker;
 mod mdnsconfig;
 
+use action::Action;
 use bus::Bus;
 use docker::Docker;
 use mdnsconfig::MdnsConfig;
 
-#[derive(Debug)]
-enum Action {
-    Die,
-    Start,
-}
-
+// This is our main processing of the events coming from Docker.
+//
+// We watch for Die and Start events, and publish or unpublish hostnames based
+// on those.
+//
+// Any other events are ignored.
 fn handler<'a>(bus: &mut Bus<'a>, event: &EventMessage) -> Result<()> {
     debug!("handler event: {:?}", event);
 
-    let action = match event.action.as_ref().map(String::as_ref) {
-        Some("die")   => Action::Die,
-        Some("start") => Action::Start,
-        _             => return Ok(()),
+    // We only deal with Die and Start at the moment. Ignore any Other action.
+    let action = match Action::from(&event.action) {
+        Action::Other => return Ok(()),
+        wanted        => wanted,
     };
 
     let actor = match &event.actor {
@@ -40,9 +42,11 @@ fn handler<'a>(bus: &mut Bus<'a>, event: &EventMessage) -> Result<()> {
 
     let mdns_config = MdnsConfig::from(&actor.attributes);
 
+    // Other actions should be unreachable, we already filtered for them above.
     match action {
         Action::Die   => bus.unpublish(&mdns_config),
         Action::Start => bus.publish(&mdns_config),
+        _             => unreachable!(),
     }
 }
 
