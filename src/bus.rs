@@ -92,9 +92,9 @@ impl<'a> Bus<'a> {
             return Ok(());
         }
 
-        let host = match config.host() {
-            Some(host) => host.clone(),
-            None       => return Ok(()),
+        let hosts = match config.hosts() {
+            Some(hosts) => hosts,
+            None        => return Ok(()),
         };
 
         let proxy = self.conn.with_proxy(
@@ -124,17 +124,19 @@ impl<'a> Bus<'a> {
         for address in &addresses {
             debug!("AddAddress: {:?}", address);
 
-            group.method_call(
-                INTERFACE_ENTRY_GROUP,
-                "AddAddress",
-                (
-                    &self.interface,
-                    PROTO_UNSPEC,
-                    FLAG_NO_REVERSE,
-                    &host,
-                    address.to_string(),
-                ),
-            )?;
+            for host in hosts {
+                group.method_call(
+                    INTERFACE_ENTRY_GROUP,
+                    "AddAddress",
+                    (
+                        &self.interface,
+                        PROTO_UNSPEC,
+                        FLAG_NO_REVERSE,
+                        &host,
+                        address.to_string(),
+                    ),
+                )?;
+            }
         }
 
         group.method_call(
@@ -145,7 +147,7 @@ impl<'a> Bus<'a> {
 
         debug!("Addresses committed");
 
-        self.published.insert(host, group_path);
+        self.published.insert(config.id().to_string(), group_path);
 
         Ok(())
     }
@@ -153,12 +155,9 @@ impl<'a> Bus<'a> {
     pub fn unpublish(&mut self, config: &MdnsConfig) -> Result<()> {
         info!("Unpublishing config: {:?}", config);
 
-        let host = match config.host() {
-            Some(host) => host.clone(),
-            None       => return Ok(()),
-        };
+        let id = config.id();
 
-        let group_path = match self.published.remove(&host) {
+        let group_path = match self.published.remove(id) {
             Some(group_path) => group_path,
             None             => return Ok(()),
         };
@@ -181,7 +180,7 @@ impl<'a> Bus<'a> {
             (),
         )?;
 
-        debug!("Unpublished: {}", host);
+        debug!("Unpublished: {}", id);
 
         Ok(())
     }

@@ -25,8 +25,11 @@ labels are:
 | Label                   | Default | Description                     |
 |-------------------------|---------|---------------------------------|
 | `docker-mdns.enable`    | `false` | Enable mDNS for the container   |
-| `docker-mdns.host`      | `None`  | Hostname to announce            |
+| `docker-mdns.host`      | `None`  | Hostname(s) to announce         |
 | `docker-mdns.interface` | `None`  | Interface to get addresses from |
+
+The `docker-mdns.host` label can take a list of whitespace separated hostnames
+if you want multiple hostnames for a container.
 
 Providing `docker-mdns.interface` will override which interface Docker mDNS
 uses when finding IP addresses to announce for the `docker-mdns.host`.

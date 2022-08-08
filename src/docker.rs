@@ -80,7 +80,7 @@ impl Docker {
 
         let configs = containers
             .iter()
-            .map(|container| MdnsConfig::from(&container.labels))
+            .map(MdnsConfig::from)
             .collect();
 
         debug!("Startup container scan found: {:?}", configs);

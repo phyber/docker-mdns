@@ -40,7 +40,7 @@ fn handler<'a>(bus: &mut Bus<'a>, event: &EventMessage) -> Result<()> {
         None        => return Ok(()),
     };
 
-    let mdns_config = MdnsConfig::from(&actor.attributes);
+    let mdns_config = MdnsConfig::from(actor);
 
     // Other actions should be unreachable, we already filtered for them above.
     match action {
