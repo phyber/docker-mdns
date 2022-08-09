@@ -13,12 +13,11 @@ use std::env;
 mod action;
 mod bus;
 mod docker;
-mod mdnsconfig;
+mod mdns;
 
 use action::Action;
 use bus::Bus;
 use docker::Docker;
-use mdnsconfig::MdnsConfig;
 
 // This is our main processing of the events coming from Docker.
 //
@@ -40,7 +39,7 @@ fn handler<'a>(bus: &mut Bus<'a>, event: &EventMessage) -> Result<()> {
         None        => return Ok(()),
     };
 
-    let mdns_config = MdnsConfig::from(actor);
+    let mdns_config = mdns::Config::from(actor);
 
     // Other actions should be unreachable, we already filtered for them above.
     match action {

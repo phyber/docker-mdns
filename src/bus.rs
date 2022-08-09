@@ -1,6 +1,7 @@
 // DBus handling.
 // Module is called "bus" to avoid collision with dbus crate.
 use anyhow::Result;
+use crate::mdns;
 use dbus::blocking::Connection;
 use dbus::strings::Path;
 use if_addrs::get_if_addrs;
@@ -11,7 +12,6 @@ use log::{
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::time::Duration;
-use super::MdnsConfig;
 
 const FLAG_NO_REVERSE: u32 = 16;
 const INTERFACE_ENTRY_GROUP: &str = "org.freedesktop.Avahi.EntryGroup";
@@ -85,7 +85,7 @@ impl<'a> Bus<'a> {
         Ok(res)
     }
 
-    pub fn publish(&mut self, config: &MdnsConfig) -> Result<()> {
+    pub fn publish(&mut self, config: &mdns::Config) -> Result<()> {
         info!("Publishing config: {:?}", config);
 
         if !config.enabled() {
@@ -152,7 +152,7 @@ impl<'a> Bus<'a> {
         Ok(())
     }
 
-    pub fn unpublish(&mut self, config: &MdnsConfig) -> Result<()> {
+    pub fn unpublish(&mut self, config: &mdns::Config) -> Result<()> {
         info!("Unpublishing config: {:?}", config);
 
         let id = config.id();
