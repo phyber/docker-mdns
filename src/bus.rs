@@ -116,7 +116,9 @@ impl<'a> Bus<'a> {
             Duration::from_millis(5_000),
         );
 
-        let interface = config.interface().unwrap_or(&self.interface_name);
+        let interface = config
+            .override_interface()
+            .unwrap_or(&self.interface_name);
 
         // Addresses could change between publishes, so we get them each time.
         let addresses = interface_addresses(interface)?;

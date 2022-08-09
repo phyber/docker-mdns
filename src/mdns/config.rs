@@ -20,7 +20,7 @@ pub struct Config {
     id: String,
 
     // The override interface provided via docker-mdns.interface, if any.
-    interface: Option<String>,
+    override_interface: Option<String>,
 
     // The state, Enabled or Disabled. Taken from docker-mdns.enable.
     state: State,
@@ -41,8 +41,8 @@ impl Config {
         &self.id
     }
 
-    pub fn interface(&self) -> Option<&String> {
-        self.interface.as_ref()
+    pub fn override_interface(&self) -> Option<&String> {
+        self.override_interface.as_ref()
     }
 }
 
@@ -70,7 +70,7 @@ impl From<&EventActor> for Config {
                 // work to do.
                 let enable = attributes.get(DOCKER_MDNS_ENABLE);
                 let hosts = attributes.get(DOCKER_MDNS_HOST);
-                let interface = attributes.get(DOCKER_MDNS_INTERFACE);
+                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE);
                 let state = State::from(enable);
 
                 // Build a vec of hosts from the string we get from the label.
@@ -86,7 +86,7 @@ impl From<&EventActor> for Config {
                 Self {
                     hosts: hosts,
                     id: id,
-                    interface: interface.cloned(),
+                    override_interface: override_interface.cloned(),
                     state: state,
                 }
             }
