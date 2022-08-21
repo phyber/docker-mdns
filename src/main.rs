@@ -25,7 +25,7 @@ use docker::Docker;
 // on those.
 //
 // Any other events are ignored.
-fn handler<'a>(bus: &mut Bus<'a>, event: &EventMessage) -> Result<()> {
+async fn handler(bus: &mut Bus, event: &EventMessage) -> Result<()> {
     debug!("handler event: {:?}", event);
 
     // We only deal with Die and Start at the moment. Ignore any Other action.
@@ -43,8 +43,8 @@ fn handler<'a>(bus: &mut Bus<'a>, event: &EventMessage) -> Result<()> {
 
     // Other actions should be unreachable, we already filtered for them above.
     match action {
-        Action::Die   => bus.unpublish(&mdns_config),
-        Action::Start => bus.publish(&mdns_config),
+        Action::Die   => bus.unpublish(&mdns_config).await,
+        Action::Start => bus.publish(&mdns_config).await,
         _             => unreachable!(),
     }
 }
@@ -71,7 +71,7 @@ async fn main() -> Result<()> {
     info!("Interface: {:?}", interface);
 
     // Get a dbus connection
-    let mut bus = Bus::new(interface)?;
+    let mut bus = Bus::new(interface).await?;
 
     // Get a docker connection
     let docker = Docker::new()?;
@@ -80,7 +80,7 @@ async fn main() -> Result<()> {
     // need DNS registering.
     let startup_configs = docker.startup_scan().await?;
     for config in startup_configs {
-        bus.publish(&config)?;
+        bus.publish(&config).await?;
     }
 
     // Now we listen for Docker events
@@ -90,7 +90,7 @@ async fn main() -> Result<()> {
 
     while let Some(event) = events.next().await {
         let event = event?;
-        handler(&mut bus, &event)?;
+        handler(&mut bus, &event).await?;
     }
 
     Ok(())

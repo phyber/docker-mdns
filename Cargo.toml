@@ -9,12 +9,12 @@ resolver = "2"
 anyhow = "1.0"
 bollard = "0.13"
 chrono = "0.4"
-dbus = "0.9"
 futures-core = "0.3"
 futures-util = "0.3"
 if-addrs = "0.7"
 log = "0.4"
 pretty_env_logger = "0.4"
+zvariant = "3.6"
 
 [dependencies.serde]
 version = "1.0"
@@ -27,4 +27,11 @@ version = "1.0"
 features = [
     "macros",
     "rt-multi-thread",
+]
+
+[dependencies.zbus]
+version = "3.0"
+default-features = false
+features = [
+    "tokio",
 ]

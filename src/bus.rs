@@ -2,8 +2,6 @@
 // Module is called "bus" to avoid collision with dbus crate.
 use anyhow::Result;
 use crate::mdns;
-use dbus::blocking::Connection;
-use dbus::strings::Path;
 use if_addrs::get_if_addrs;
 use log::{
     debug,
@@ -11,7 +9,13 @@ use log::{
 };
 use std::collections::HashMap;
 use std::net::IpAddr;
-use std::time::Duration;
+use zbus::{
+    Connection,
+};
+use zvariant::{
+    ObjectPath,
+    OwnedObjectPath,
+};
 
 const FLAG_NO_REVERSE: u32 = 16;
 const INTERFACE_ENTRY_GROUP: &str = "org.freedesktop.Avahi.EntryGroup";
@@ -38,19 +42,19 @@ fn interface_addresses(interface: &str) -> Result<Vec<IpAddr>> {
     Ok(addrs)
 }
 
-pub struct Bus<'a> {
+pub struct Bus {
     conn: Connection,
     interface: i32,
     interface_name: String,
-    published: HashMap<String, Path<'a>>,
+    published: HashMap<String, OwnedObjectPath>,
 }
 
-impl<'a> Bus<'a> {
-    pub fn new(interface: String) -> Result<Self> {
+impl Bus {
+    pub async fn new(interface: String) -> Result<Self> {
         info!("Getting D-Bus handle for interface: {}", interface);
 
-        let conn = Connection::new_system()?;
-        let avahi_interface = Self::avahi_interface(&conn, &interface)?;
+        let conn = Connection::system().await?;
+        let avahi_interface = Self::avahi_interface(&conn, &interface).await?;
 
         let bus = Self {
             conn: conn,
@@ -65,27 +69,25 @@ impl<'a> Bus<'a> {
     // Gets the avahi interface index.
     // Doesn't act on `self` as we need this number before we're constructed
     // an instance of Self.
-    fn avahi_interface(conn: &Connection, interface: &str) -> Result<i32> {
+    async fn avahi_interface(conn: &Connection, interface: &str) -> Result<i32> {
         info!("Getting Avahi Interface number for: {}", interface);
 
-        let proxy = conn.with_proxy(
-            NAMESPACE_AVAHI,
-            Path::from("/"),
-            Duration::from_millis(5_000),
-        );
-
-        let (res,): (i32,) = proxy.method_call(
-            INTERFACE_SERVER,
+        let reply = conn.call_method(
+            Some(NAMESPACE_AVAHI),
+            "/",
+            Some(INTERFACE_SERVER),
             "GetNetworkInterfaceIndexByName",
-            (interface,),
-        )?;
+            &(interface,),
+        ).await?;
+
+        let res: i32 = reply.body()?;
 
         debug!("avahi_interface for {} is {}", interface, res);
 
         Ok(res)
     }
 
-    pub fn publish(&mut self, config: &mdns::Config) -> Result<()> {
+    pub async fn publish(&mut self, config: &mdns::Config) -> Result<()> {
         info!("Publishing config: {:?}", config);
 
         if !config.enabled() {
@@ -97,24 +99,16 @@ impl<'a> Bus<'a> {
             None        => return Ok(()),
         };
 
-        let proxy = self.conn.with_proxy(
-            NAMESPACE_AVAHI,
-            Path::from("/"),
-            Duration::from_millis(5_000),
-        );
-
         // Get a new group to publish under
-        let (group_path,): (Path,) = proxy.method_call(
-            INTERFACE_SERVER,
+        let reply = self.conn.call_method(
+            Some(NAMESPACE_AVAHI),
+            "/",
+            Some(INTERFACE_SERVER),
             "EntryGroupNew",
-            (),
-        )?;
+            &(),
+        ).await?;
 
-        let group = self.conn.with_proxy(
-            NAMESPACE_AVAHI,
-            &group_path,
-            Duration::from_millis(5_000),
-        );
+        let group_path: ObjectPath = reply.body()?;
 
         let interface = config
             .override_interface()
@@ -127,34 +121,41 @@ impl<'a> Bus<'a> {
             debug!("AddAddress: {:?}", address);
 
             for host in hosts {
-                group.method_call(
-                    INTERFACE_ENTRY_GROUP,
+                self.conn.call_method(
+                    Some(NAMESPACE_AVAHI),
+                    &group_path,
+                    Some(INTERFACE_ENTRY_GROUP),
                     "AddAddress",
-                    (
+                    &(
                         &self.interface,
                         PROTO_UNSPEC,
                         FLAG_NO_REVERSE,
                         &host,
                         address.to_string(),
                     ),
-                )?;
+                ).await?;
             }
         }
 
-        group.method_call(
-            INTERFACE_ENTRY_GROUP,
+        self.conn.call_method(
+            Some(NAMESPACE_AVAHI),
+            &group_path,
+            Some(INTERFACE_ENTRY_GROUP),
             "Commit",
-            (),
-        )?;
+            &(),
+        ).await?;
 
         debug!("Addresses committed");
 
-        self.published.insert(config.id().to_string(), group_path);
+        self.published.insert(
+            config.id().to_string(),
+            OwnedObjectPath::from(group_path),
+        );
 
         Ok(())
     }
 
-    pub fn unpublish(&mut self, config: &mdns::Config) -> Result<()> {
+    pub async fn unpublish(&mut self, config: &mdns::Config) -> Result<()> {
         info!("Unpublishing config: {:?}", config);
 
         let id = config.id();
@@ -164,23 +165,21 @@ impl<'a> Bus<'a> {
             None             => return Ok(()),
         };
 
-        let group = self.conn.with_proxy(
-            NAMESPACE_AVAHI,
+        self.conn.call_method(
+            Some(NAMESPACE_AVAHI),
             &group_path,
-            Duration::from_millis(5_000),
-        );
-
-        group.method_call(
-            INTERFACE_ENTRY_GROUP,
+            Some(INTERFACE_ENTRY_GROUP),
             "Reset",
-            (),
-        )?;
+            &(),
+        ).await?;
 
-        group.method_call(
-            INTERFACE_ENTRY_GROUP,
+        self.conn.call_method(
+            Some(NAMESPACE_AVAHI),
+            &group_path,
+            Some(INTERFACE_ENTRY_GROUP),
             "Free",
-            (),
-        )?;
+            &(),
+        ).await?;
 
         debug!("Unpublished: {}", id);
 
