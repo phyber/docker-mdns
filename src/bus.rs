@@ -11,11 +11,9 @@ use std::collections::HashMap;
 use std::net::IpAddr;
 use zbus::{
     Connection,
+    Proxy,
 };
-use zvariant::{
-    ObjectPath,
-    OwnedObjectPath,
-};
+use zvariant::OwnedObjectPath;
 
 const FLAG_NO_REVERSE: u32 = 16;
 const INTERFACE_ENTRY_GROUP: &str = "org.freedesktop.Avahi.EntryGroup";
@@ -69,7 +67,10 @@ impl Bus {
     // Gets the avahi interface index.
     // Doesn't act on `self` as we need this number before we're constructed
     // an instance of Self.
-    async fn avahi_interface(conn: &Connection, interface: &str) -> Result<i32> {
+    async fn avahi_interface(
+        conn: &Connection,
+        interface: &str,
+    ) -> Result<i32> {
         info!("Getting Avahi Interface number for: {}", interface);
 
         let reply = conn.call_method(
@@ -100,15 +101,24 @@ impl Bus {
         };
 
         // Get a new group to publish under
-        let reply = self.conn.call_method(
-            Some(NAMESPACE_AVAHI),
+        let proxy = Proxy::new(
+            &self.conn,
+            NAMESPACE_AVAHI,
             "/",
-            Some(INTERFACE_SERVER),
+            INTERFACE_SERVER,
+        ).await?;
+
+        let group_path: OwnedObjectPath = proxy.call(
             "EntryGroupNew",
             &(),
         ).await?;
 
-        let group_path: ObjectPath = reply.body()?;
+        let entry_group = Proxy::new(
+            &self.conn,
+            NAMESPACE_AVAHI,
+            &group_path,
+            INTERFACE_ENTRY_GROUP,
+        ).await?;
 
         let interface = config
             .override_interface()
@@ -121,10 +131,7 @@ impl Bus {
             debug!("AddAddress: {:?}", address);
 
             for host in hosts {
-                self.conn.call_method(
-                    Some(NAMESPACE_AVAHI),
-                    &group_path,
-                    Some(INTERFACE_ENTRY_GROUP),
+                entry_group.call_method(
                     "AddAddress",
                     &(
                         &self.interface,
@@ -137,20 +144,11 @@ impl Bus {
             }
         }
 
-        self.conn.call_method(
-            Some(NAMESPACE_AVAHI),
-            &group_path,
-            Some(INTERFACE_ENTRY_GROUP),
-            "Commit",
-            &(),
-        ).await?;
+        entry_group.call_method("Commit", &()).await?;
 
         debug!("Addresses committed");
 
-        self.published.insert(
-            config.id().to_string(),
-            OwnedObjectPath::from(group_path),
-        );
+        self.published.insert(config.id().to_string(), group_path);
 
         Ok(())
     }
@@ -165,21 +163,15 @@ impl Bus {
             None             => return Ok(()),
         };
 
-        self.conn.call_method(
-            Some(NAMESPACE_AVAHI),
+        let entry_group = Proxy::new(
+            &self.conn,
+            NAMESPACE_AVAHI,
             &group_path,
-            Some(INTERFACE_ENTRY_GROUP),
-            "Reset",
-            &(),
+            INTERFACE_ENTRY_GROUP,
         ).await?;
 
-        self.conn.call_method(
-            Some(NAMESPACE_AVAHI),
-            &group_path,
-            Some(INTERFACE_ENTRY_GROUP),
-            "Free",
-            &(),
-        ).await?;
+        entry_group.call_method("Reset", &()).await?;
+        entry_group.call_method("Free", &()).await?;
 
         debug!("Unpublished: {}", id);
 
