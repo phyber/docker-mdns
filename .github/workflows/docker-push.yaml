@@ -42,6 +42,14 @@ jobs:
           target: "${{ matrix.target }}"
           toolchain: "stable"
 
+      # Login to DockerHub to help with throttling of image pulls. This token
+      # is Read-Only.
+      - name: "DockerHub Registry Login"
+        uses: "docker/login-action@v2"
+        with:
+          password: "${{ secrets.DOCKER_HUB_TOKEN }}"
+          username: "${{ secrets.DOCKER_HUB_USERNAME }}"
+
       - name: "Build"
         uses: "actions-rs/cargo@v1"
         with:
@@ -71,12 +79,13 @@ jobs:
           echo "::set-output name=base_image_name::${IMAGE_NAME}"
           echo "::set-output name=image_name::${IMAGE_NAME}:${ARCH_NAME}"
 
-      - name: "Registry Login"
-        run: |
-          docker login ghcr.io \
-            --username "${{ github.actor }}" \
-            --password-stdin \
-            <<< ${{ secrets.GITHUB_TOKEN }}
+      # Login for pushing the image to GitHub.
+      - name: "GitHub Registry Login"
+        uses: "docker/login-action@v2"
+        with:
+          password: "${{ secrets.GITHUB_TOKEN }}"
+          registry: "ghcr.io"
+          username: "${{ github.actor }}"
 
       - name: "Push Image"
         run: |
