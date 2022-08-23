@@ -17,10 +17,10 @@ jobs:
       contents: "read"
     strategy:
       matrix:
-        arch:
-          - "aarch64"
-          - "amd64"
-          - "armv7"
+        target:
+          - "aarch64-unknown-linux-gnu"
+          - "armv7-unknown-linux-gnueabihf"
+          - "x86_64-unknown-linux-gnu"
 
     steps:
       - name: "Checkout"
@@ -32,28 +32,44 @@ jobs:
         uses: "actions/cache@v3"
         with:
           path: "target"
-          key: "stable-${{ runner.os }}-target-${{ matrix.arch }}-${{ hashFiles('Cargo.lock') }}"
+          key: "stable-${{ runner.os }}-${{ matrix.target }}-${{ hashFiles('Cargo.lock') }}"
 
       - name: "Install Rust Toolchain"
         uses: "actions-rs/toolchain@v1"
         with:
           override: true
           profile: "minimal"
+          target: "${{ matrix.target }}"
           toolchain: "stable"
 
-      - name: "Install Cross"
-        run: |
-          cargo install cross
-
       - name: "Build"
-        id: "build"
+        uses: "actions-rs/cargo@v1"
+        with:
+          command: "build"
+          use-cross: true
+          args: >-
+            --release
+            --target ${{ matrix.target }}
+
+      - name: "Create Image"
+        id: "image"
         env:
           IMAGE_NAME: "docker-mdns"
         run: |
-          make image${{ matrix.arch }}
+          ARCH_NAME="$(echo "${{ matrix.target }}" | cut -d"-" -f1)"
 
+          # Fix up the arch name if we're on an x86_64 target.
+          if [ "${ARCH_NAME}" == "x86_64" ]; then
+            ARCH_NAME="amd64"
+          fi
+
+          # This should just build the image right away, cross has already
+          # built our binary above.
+          make image${ARCH_NAME}
+
+          echo "::set-output name=arch_name::${ARCH_NAME}"
           echo "::set-output name=base_image_name::${IMAGE_NAME}"
-          echo "::set-output name=image_name::${IMAGE_NAME}:${{ matrix.arch }}"
+          echo "::set-output name=image_name::${IMAGE_NAME}:${ARCH_NAME}"
 
       - name: "Registry Login"
         run: |
@@ -64,8 +80,9 @@ jobs:
 
       - name: "Push Image"
         run: |
-          BASE_IMAGE_NAME="${{ steps.build.outputs.base_image_name }}"
-          IMAGE_NAME="${{ steps.build.outputs.image_name }}"
+          ARCH_NAME="${{ steps.image.outputs.arch_name }}"
+          BASE_IMAGE_NAME="${{ steps.image.outputs.base_image_name }}"
+          IMAGE_NAME="${{ steps.image.outputs.image_name }}"
           IMAGE_ID="ghcr.io/${{ github.repository_owner }}/${BASE_IMAGE_NAME}"
           IMAGE_ID="$(echo ${IMAGE_ID} | tr '[A-Z]' '[a-z]')"
           VERSION="$(echo "${{ github.ref }}" | sed 's#.*/\(.*\)#\1#')"
@@ -75,7 +92,7 @@ jobs:
           fi
 
           if [ "${VERSION}" == "main" ]; then
-            VERSION="${{ matrix.arch }}-latest"
+            VERSION="${ARCH_NAME}-latest"
           fi
 
           echo IMAGE_ID="${IMAGE_ID}"
@@ -83,10 +100,10 @@ jobs:
 
           # Tag
           echo "Tagging"
-          docker tag "${IMAGE_NAME}" "${IMAGE_ID}:${{ matrix.arch }}"
+          docker tag "${IMAGE_NAME}" "${IMAGE_ID}:${ARCH_NAME}"
           docker tag "${IMAGE_NAME}" "${IMAGE_ID}:${VERSION}"
 
           # Push
           echo "Pushing"
-          docker push "${IMAGE_ID}:${{ matrix.arch }}"
+          docker push "${IMAGE_ID}:${ARCH_NAME}"
           docker push "${IMAGE_ID}:${VERSION}"
