@@ -41,23 +41,27 @@ fn interface_addresses(interface: &str) -> Result<Vec<IpAddr>> {
 }
 
 pub struct Bus {
+    avahi_interface_index: i32,
     conn: Connection,
-    interface: i32,
     interface_name: String,
     published: HashMap<String, OwnedObjectPath>,
 }
 
 impl Bus {
-    pub async fn new(interface: String) -> Result<Self> {
-        info!("Getting D-Bus handle for interface: {}", interface);
+    pub async fn new(interface_name: String) -> Result<Self> {
+        info!("Getting D-Bus handle for interface: {}", interface_name);
 
         let conn = Connection::system().await?;
-        let avahi_interface = Self::avahi_interface(&conn, &interface).await?;
+
+        let avahi_interface_index = Self::avahi_interface_index_from_name(
+            &conn,
+            &interface_name,
+        ).await?;
 
         let bus = Self {
+            avahi_interface_index: avahi_interface_index,
             conn: conn,
-            interface: avahi_interface,
-            interface_name: interface,
+            interface_name: interface_name,
             published: HashMap::new(),
         };
 
@@ -67,25 +71,25 @@ impl Bus {
     // Gets the avahi interface index.
     // Doesn't act on `self` as we need this number before we're constructed
     // an instance of Self.
-    async fn avahi_interface(
+    async fn avahi_interface_index_from_name(
         conn: &Connection,
-        interface: &str,
+        interface_name: &str,
     ) -> Result<i32> {
-        info!("Getting Avahi Interface number for: {}", interface);
+        info!("Getting Avahi Interface Index for: {}", interface_name);
 
         let reply = conn.call_method(
             Some(NAMESPACE_AVAHI),
             "/",
             Some(INTERFACE_SERVER),
             "GetNetworkInterfaceIndexByName",
-            &(interface,),
+            &(interface_name,),
         ).await?;
 
-        let res: i32 = reply.body()?;
+        let index: i32 = reply.body()?;
 
-        debug!("avahi_interface for {} is {}", interface, res);
+        debug!("avahi_interface for {} is {}", interface_name, index);
 
-        Ok(res)
+        Ok(index)
     }
 
     pub async fn publish(&mut self, config: &mdns::Config) -> Result<()> {
@@ -120,12 +124,12 @@ impl Bus {
             INTERFACE_ENTRY_GROUP,
         ).await?;
 
-        let interface = config
+        let interface_name = config
             .override_interface()
             .unwrap_or(&self.interface_name);
 
         // Addresses could change between publishes, so we get them each time.
-        let addresses = interface_addresses(interface)?;
+        let addresses = interface_addresses(interface_name)?;
 
         for address in &addresses {
             debug!("AddAddress: {:?}", address);
@@ -134,7 +138,7 @@ impl Bus {
                 entry_group.call_method(
                     "AddAddress",
                     &(
-                        &self.interface,
+                        &self.avahi_interface_index,
                         PROTO_UNSPEC,
                         FLAG_NO_REVERSE,
                         &host,
