@@ -13,7 +13,7 @@ use zbus::{
     Connection,
     Proxy,
 };
-use zvariant::OwnedObjectPath;
+use zbus::zvariant::OwnedObjectPath;
 
 const FLAG_NO_REVERSE: u32 = 16;
 const INTERFACE_ENTRY_GROUP: &str = "org.freedesktop.Avahi.EntryGroup";
