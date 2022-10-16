@@ -3,7 +3,7 @@
 // Turn event actions into a nice enum
 #![forbid(unsafe_code)]
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub enum Action {
     Die,

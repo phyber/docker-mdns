@@ -10,7 +10,7 @@ const DOCKER_MDNS_ENABLE: &str = "docker-mdns.enable";
 const DOCKER_MDNS_HOST: &str = "docker-mdns.host";
 const DOCKER_MDNS_INTERFACE: &str = "docker-mdns.interface";
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub struct Config {
     // Hosts taken from docker-mdns.host
     // These are the hostnames to be announced via Avahi.

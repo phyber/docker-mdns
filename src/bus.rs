@@ -10,16 +10,55 @@ use log::{
 use std::collections::HashMap;
 use std::net::IpAddr;
 use zbus::{
+    dbus_proxy,
+    fdo,
     Connection,
-    Proxy,
 };
 use zbus::zvariant::OwnedObjectPath;
 
 const FLAG_NO_REVERSE: u32 = 16;
-const INTERFACE_ENTRY_GROUP: &str = "org.freedesktop.Avahi.EntryGroup";
-const INTERFACE_SERVER: &str = "org.freedesktop.Avahi.Server";
-const NAMESPACE_AVAHI: &str = "org.freedesktop.Avahi";
 const PROTO_UNSPEC: i32 = -1;
+
+#[dbus_proxy(
+    default_path = "/",
+    default_service = "org.freedesktop.Avahi",
+    interface = "org.freedesktop.Avahi.Server",
+)]
+trait AvahiServer {
+    // EntryGroupNew
+    fn entry_group_new(&self) -> fdo::Result<OwnedObjectPath>;
+
+    // GetNetworkInterfaceIndexByName
+    fn get_network_interface_index_by_name(
+        &self,
+        interface_name: &str,
+    ) -> fdo::Result<i32>;
+}
+
+#[dbus_proxy(
+    default_service = "org.freedesktop.Avahi",
+    interface = "org.freedesktop.Avahi.EntryGroup",
+)]
+trait EntryGroup {
+    // AddAddress
+    fn add_address(
+        &self,
+        index: &i32,
+        protocol: i32,
+        flags: u32,
+        host: &str,
+        address: String,
+    ) -> fdo::Result<()>;
+
+    // Commit
+    fn commit(&self) -> fdo::Result<()>;
+
+    // Free
+    fn free(&self) -> fdo::Result<()>;
+
+    // Reset
+    fn reset(&self) -> fdo::Result<()>;
+}
 
 // Returns a Vec of IpAddr for the given interface.
 //
@@ -77,15 +116,11 @@ impl Bus {
     ) -> Result<i32> {
         info!("Getting Avahi Interface Index for: {}", interface_name);
 
-        let reply = conn.call_method(
-            Some(NAMESPACE_AVAHI),
-            "/",
-            Some(INTERFACE_SERVER),
-            "GetNetworkInterfaceIndexByName",
-            &(interface_name,),
-        ).await?;
+        let avahi = AvahiServerProxy::new(conn).await?;
 
-        let index: i32 = reply.body()?;
+        let index = avahi.get_network_interface_index_by_name(
+            interface_name,
+        ).await?;
 
         debug!("avahi_interface for {} is {}", interface_name, index);
 
@@ -105,24 +140,13 @@ impl Bus {
         };
 
         // Get a new group to publish under
-        let proxy = Proxy::new(
-            &self.conn,
-            NAMESPACE_AVAHI,
-            "/",
-            INTERFACE_SERVER,
-        ).await?;
+        let proxy = AvahiServerProxy::new(&self.conn).await?;
+        let group_path = proxy.entry_group_new().await?;
 
-        let group_path: OwnedObjectPath = proxy.call(
-            "EntryGroupNew",
-            &(),
-        ).await?;
-
-        let entry_group = Proxy::new(
-            &self.conn,
-            NAMESPACE_AVAHI,
-            &group_path,
-            INTERFACE_ENTRY_GROUP,
-        ).await?;
+        let entry_group = EntryGroupProxy::builder(&self.conn)
+            .path(&group_path)?
+            .build()
+            .await?;
 
         let interface_name = config
             .override_interface()
@@ -135,20 +159,17 @@ impl Bus {
             debug!("AddAddress: {:?}", address);
 
             for host in hosts {
-                entry_group.call_method(
-                    "AddAddress",
-                    &(
-                        &self.avahi_interface_index,
-                        PROTO_UNSPEC,
-                        FLAG_NO_REVERSE,
-                        &host,
-                        address.to_string(),
-                    ),
+                entry_group.add_address(
+                    &self.avahi_interface_index,
+                    PROTO_UNSPEC,
+                    FLAG_NO_REVERSE,
+                    host,
+                    address.to_string(),
                 ).await?;
             }
         }
 
-        entry_group.call_method("Commit", &()).await?;
+        entry_group.commit().await?;
 
         debug!("Addresses committed");
 
@@ -167,15 +188,13 @@ impl Bus {
             None             => return Ok(()),
         };
 
-        let entry_group = Proxy::new(
-            &self.conn,
-            NAMESPACE_AVAHI,
-            &group_path,
-            INTERFACE_ENTRY_GROUP,
-        ).await?;
+        let entry_group = EntryGroupProxy::builder(&self.conn)
+            .path(&group_path)?
+            .build()
+            .await?;
 
-        entry_group.call_method("Reset", &()).await?;
-        entry_group.call_method("Free", &()).await?;
+        entry_group.reset().await?;
+        entry_group.free().await?;
 
         debug!("Unpublished: {}", id);
 
