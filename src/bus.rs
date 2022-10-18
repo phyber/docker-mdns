@@ -1,5 +1,4 @@
 // DBus handling.
-// Module is called "bus" to avoid collision with dbus crate.
 use anyhow::Result;
 use crate::mdns;
 use if_addrs::get_if_addrs;
@@ -61,10 +60,6 @@ trait EntryGroup {
 }
 
 // Returns a Vec of IpAddr for the given interface.
-//
-// We only call this once when getting our Bus handle, but we should probably
-// call it each time we publish, as interface addresses may change and listing
-// IP addresses should be a fairly cheap operation.
 fn interface_addresses(interface: &str) -> Result<Vec<IpAddr>> {
     info!("Getting interface addresses for {}", interface);
 
@@ -79,52 +74,32 @@ fn interface_addresses(interface: &str) -> Result<Vec<IpAddr>> {
     Ok(addrs)
 }
 
-pub struct Bus {
+pub struct Dbus {
     avahi_interface_index: i32,
     conn: Connection,
     interface_name: String,
     published: HashMap<String, OwnedObjectPath>,
 }
 
-impl Bus {
+impl Dbus {
     pub async fn new(interface_name: String) -> Result<Self> {
         info!("Getting D-Bus handle for interface: {}", interface_name);
 
         let conn = Connection::system().await?;
 
-        let avahi_interface_index = Self::avahi_interface_index_from_name(
-            &conn,
-            &interface_name,
-        ).await?;
+        let avahi_interface_index = AvahiServerProxy::new(&conn)
+            .await?
+            .get_network_interface_index_by_name(&interface_name)
+            .await?;
 
-        let bus = Self {
+        let dbus = Self {
             avahi_interface_index: avahi_interface_index,
             conn: conn,
             interface_name: interface_name,
             published: HashMap::new(),
         };
 
-        Ok(bus)
-    }
-
-    // Gets the avahi interface index.
-    // Doesn't act on `self` as we need this number before we're constructed
-    // an instance of Self.
-    async fn avahi_interface_index_from_name(
-        conn: &Connection,
-        interface_name: &str,
-    ) -> Result<i32> {
-        info!("Getting Avahi Interface Index for: {}", interface_name);
-
-        let avahi = AvahiServerProxy::new(conn).await?;
-
-        let index = avahi.get_network_interface_index_by_name(
-            interface_name,
-        ).await?;
-
-        debug!("avahi_interface for {} is {}", interface_name, index);
-
-        Ok(index)
+        Ok(dbus)
     }
 
     pub async fn publish(&mut self, config: &mdns::Config) -> Result<()> {

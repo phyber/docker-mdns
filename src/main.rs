@@ -16,7 +16,7 @@ mod docker;
 mod mdns;
 
 use action::Action;
-use bus::Bus;
+use bus::Dbus;
 use docker::Docker;
 
 // This is our main processing of the events coming from Docker.
@@ -25,7 +25,7 @@ use docker::Docker;
 // on those.
 //
 // Any other events are ignored.
-async fn handler(bus: &mut Bus, event: &EventMessage) -> Result<()> {
+async fn handler(bus: &mut Dbus, event: &EventMessage) -> Result<()> {
     debug!("handler event: {:?}", event);
 
     // We only deal with Die and Start at the moment. Ignore any Other action.
@@ -71,7 +71,7 @@ async fn main() -> Result<()> {
     info!("Interface: {:?}", interface);
 
     // Get a dbus connection
-    let mut bus = Bus::new(interface).await?;
+    let mut dbus = Dbus::new(interface).await?;
 
     // Get a docker connection
     let docker = Docker::new()?;
@@ -80,7 +80,7 @@ async fn main() -> Result<()> {
     // need DNS registering.
     let startup_configs = docker.startup_scan().await?;
     for config in startup_configs {
-        bus.publish(&config).await?;
+        dbus.publish(&config).await?;
     }
 
     // Now we listen for Docker events
@@ -90,7 +90,7 @@ async fn main() -> Result<()> {
 
     while let Some(event) = events.next().await {
         let event = event?;
-        handler(&mut bus, &event).await?;
+        handler(&mut dbus, &event).await?;
     }
 
     Ok(())
