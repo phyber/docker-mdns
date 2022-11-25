@@ -97,7 +97,7 @@ jobs:
           VERSION="$(echo "${{ github.ref }}" | sed 's#.*/\(.*\)#\1#')"
 
           if [[ "${{ github.ref }}" == "refs/tags/"* ]]; then
-            VERSION="$(echo "${VERSION}" | sed -e 's/^v//')"
+            VERSION="${ARCH_NAME}-$(echo "${VERSION}" | sed -e 's/^v//')"
           fi
 
           if [ "${VERSION}" == "main" ]; then
