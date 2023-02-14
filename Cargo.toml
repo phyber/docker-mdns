@@ -8,10 +8,10 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 anyhow = "1.0"
-bollard = "0.13"
+bollard = "0.14"
 futures-core = "0.3"
 futures-util = "0.3"
-if-addrs = "0.7"
+if-addrs = "0.8"
 log = "0.4"
 pretty_env_logger = "0.4"
 
@@ -22,14 +22,14 @@ features = [
 ]
 
 [dependencies.tokio]
-version = "1.22"
+version = "1.25"
 features = [
     "macros",
     "rt-multi-thread",
 ]
 
 [dependencies.zbus]
-version = "3.5"
+version = "3.10"
 default-features = false
 features = [
     "tokio",
