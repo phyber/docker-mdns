@@ -11,7 +11,7 @@ anyhow = "1.0"
 bollard = "0.14"
 futures-core = "0.3"
 futures-util = "0.3"
-if-addrs = "0.8"
+if-addrs = "0.10"
 log = "0.4"
 pretty_env_logger = "0.4"
 
@@ -22,7 +22,7 @@ features = [
 ]
 
 [dependencies.tokio]
-version = "1.25"
+version = "1.26"
 features = [
     "macros",
     "rt-multi-thread",
