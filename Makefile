@@ -5,7 +5,7 @@ ECHO := echo
 PROJECT := docker-mdns
 
 # The version of Debian used in the final generated images
-DOCKER_DEBIAN_VERSION := bullseye-20220822-slim
+DOCKER_DEBIAN_VERSION := bullseye-20230227-slim
 
 # AARCH64
 ARCH_AARCH64 := arm64
