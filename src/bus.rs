@@ -93,9 +93,9 @@ impl Dbus {
             .await?;
 
         let dbus = Self {
-            avahi_interface_index: avahi_interface_index,
-            conn: conn,
-            interface_name: interface_name,
+            avahi_interface_index,
+            conn,
+            interface_name,
             published: HashMap::new(),
         };
 
