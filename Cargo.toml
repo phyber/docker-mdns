@@ -29,7 +29,7 @@ features = [
 ]
 
 [dependencies.zbus]
-version = "3.10"
+version = "3.11"
 default-features = false
 features = [
     "tokio",
