@@ -2,12 +2,12 @@
 use anyhow::Result;
 use crate::mdns;
 use if_addrs::get_if_addrs;
-use log::{
+use std::collections::HashMap;
+use std::net::IpAddr;
+use tracing::{
     debug,
     info,
 };
-use std::collections::HashMap;
-use std::net::IpAddr;
 use zbus::{
     dbus_proxy,
     fdo,

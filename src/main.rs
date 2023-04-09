@@ -4,11 +4,11 @@
 use anyhow::Result;
 use bollard::models::EventMessage;
 use futures_util::stream::StreamExt;
-use log::{
+use std::env;
+use tracing::{
     debug,
     info,
 };
-use std::env;
 
 mod action;
 mod bus;
@@ -58,7 +58,7 @@ fn set_default_log_level() {
 #[tokio::main]
 async fn main() -> Result<()> {
     set_default_log_level();
-    pretty_env_logger::init();
+    tracing_subscriber::fmt::init();
 
     let interface = match env::args().nth(1) {
         Some(interface) => interface,

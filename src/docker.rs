@@ -9,11 +9,11 @@ use bollard::models::{
 use bollard::system::EventsOptions;
 use crate::mdns;
 use futures_core::Stream;
-use log::{
+use std::collections::HashMap;
+use tracing::{
     debug,
     info,
 };
-use std::collections::HashMap;
 
 pub struct Docker {
     conn: bollard::Docker,
