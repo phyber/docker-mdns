@@ -60,12 +60,12 @@ async fn main() -> Result<()> {
     set_default_log_level();
     tracing_subscriber::fmt::init();
 
-    let interface = match env::args().nth(1) {
-        Some(interface) => interface,
-        None            => {
-            eprintln!("Provide an interface to listen on");
-            ::std::process::exit(1);
-        }
+    let interface = if let Some(interface) = env::args().nth(1) {
+        interface
+    }
+    else {
+        eprintln!("Provide an interface to listen on");
+        ::std::process::exit(1);
     };
 
     info!("Interface: {:?}", interface);
