@@ -78,8 +78,9 @@ async fn main() -> Result<()> {
 
     // Before entering our main event loop, check if any existing containers
     // need DNS registering.
-    let startup_configs = docker.startup_scan().await?;
-    for config in startup_configs {
+    let startup_containers = docker.startup_scan().await?;
+    for container in startup_containers {
+        let config = mdns::Config::from(&container);
         dbus.publish(&config).await?;
     }
 

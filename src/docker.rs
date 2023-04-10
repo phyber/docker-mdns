@@ -7,7 +7,6 @@ use bollard::models::{
     EventMessage,
 };
 use bollard::system::EventsOptions;
-use crate::mdns;
 use futures_core::Stream;
 use std::collections::HashMap;
 use tracing::{
@@ -67,7 +66,7 @@ impl Docker {
 
     // Perform an initial scan of already running containers at startup time
     // so we can setup any required hostnames right away.
-    pub async fn startup_scan(&self) -> Result<Vec<mdns::Config>> {
+    pub async fn startup_scan(&self) -> Result<Vec<ContainerSummary>> {
         info!("Performing startup container scan");
 
         // We want to setup hostnames for any container that's in any kind of
@@ -79,13 +78,8 @@ impl Docker {
 
         let containers = self.list_containers(filters).await?;
 
-        let configs = containers
-            .iter()
-            .map(mdns::Config::from)
-            .collect();
+        debug!("Startup container scan found: {:?}", containers);
 
-        debug!("Startup container scan found: {:?}", configs);
-
-        Ok(configs)
+        Ok(containers)
     }
 }
