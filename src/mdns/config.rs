@@ -5,6 +5,7 @@ use bollard::models::{
 };
 use crate::mdns::State;
 use std::borrow::Cow;
+use std::convert::AsRef;
 
 // Docker labels that we're interested in.
 const DOCKER_MDNS_ENABLE: &str = "docker-mdns.enable";
@@ -21,7 +22,7 @@ pub struct Config<'a> {
     id: Cow<'a, str>,
 
     // The override interface provided via docker-mdns.interface, if any.
-    override_interface: Option<String>,
+    override_interface: Option<Cow<'a, str>>,
 
     // The state, Enabled or Disabled. Taken from docker-mdns.enable.
     state: State,
@@ -42,8 +43,8 @@ impl<'a> Config<'a> {
         &self.id
     }
 
-    pub fn override_interface(&self) -> Option<&String> {
-        self.override_interface.as_ref()
+    pub fn override_interface(&self) -> Option<&str> {
+        self.override_interface.as_ref().map(AsRef::as_ref)
     }
 }
 
@@ -71,7 +72,8 @@ impl<'a> From<&'a EventActor> for Config<'a> {
                 // work to do.
                 let enable = attributes.get(DOCKER_MDNS_ENABLE);
                 let hosts = attributes.get(DOCKER_MDNS_HOST);
-                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE);
+                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE)
+                    .map(Cow::from);
                 let state = State::from(enable);
 
                 // Build a vec of hosts from the string we get from the label.
@@ -87,7 +89,7 @@ impl<'a> From<&'a EventActor> for Config<'a> {
                 Self {
                     hosts: hosts,
                     id: id.into(),
-                    override_interface: override_interface.cloned(),
+                    override_interface: override_interface,
                     state: state,
                 }
             }
@@ -120,7 +122,8 @@ impl<'a> From<&'a ContainerSummary> for Config<'a> {
                 // work to do.
                 let enable = attributes.get(DOCKER_MDNS_ENABLE);
                 let hosts = attributes.get(DOCKER_MDNS_HOST);
-                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE);
+                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE)
+                    .map(Cow::from);
                 let state = State::from(enable);
 
                 // Build a vec of hosts from the string we get from the label.
@@ -136,7 +139,7 @@ impl<'a> From<&'a ContainerSummary> for Config<'a> {
                 Self {
                     hosts: hosts,
                     id: id.into(),
-                    override_interface: override_interface.cloned(),
+                    override_interface: override_interface,
                     state: state,
                 }
             }
