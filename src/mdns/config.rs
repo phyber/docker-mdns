@@ -57,20 +57,22 @@ impl<'a> Config<'a> {
                 // We got attributes (labels), look harder to see if there's
                 // work to do.
                 let enable = attributes.get(DOCKER_MDNS_ENABLE);
-                let hosts = attributes.get(DOCKER_MDNS_HOST);
-                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE)
-                    .map(Cow::from);
                 let state = State::from(enable);
 
                 // Build a vec of hosts from the string we get from the label.
                 // These are the hostnames that will be published.
-                let hosts = hosts
+                let hosts = attributes
+                    .get(DOCKER_MDNS_HOST)
                     .map(|hosts| {
                         hosts
                             .split_whitespace()
                             .map(Cow::from)
                             .collect::<Vec<Cow<'a, str>>>()
                     });
+
+                let override_interface = attributes
+                    .get(DOCKER_MDNS_INTERFACE)
+                    .map(Cow::from);
 
                 Self {
                     hosts: hosts,
@@ -87,7 +89,9 @@ impl<'a> Config<'a> {
     }
 
     pub fn hosts(&self) -> Option<Vec<&str>> {
-        self.hosts.as_ref().map(|v| v.iter().map(AsRef::as_ref).collect())
+        self.hosts
+            .as_ref()
+            .map(|v| v.iter().map(AsRef::as_ref).collect())
     }
 
     pub fn id(&self) -> &str {
@@ -95,7 +99,9 @@ impl<'a> Config<'a> {
     }
 
     pub fn override_interface(&self) -> Option<&str> {
-        self.override_interface.as_ref().map(AsRef::as_ref)
+        self.override_interface
+            .as_ref()
+            .map(AsRef::as_ref)
     }
 }
 
