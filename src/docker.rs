@@ -1,5 +1,8 @@
 // Docker mDNS
-use anyhow::Result;
+use anyhow::{
+    Context,
+    Result,
+};
 use bollard::container::ListContainersOptions;
 use bollard::errors::Error;
 use bollard::models::{
@@ -59,7 +62,8 @@ impl Docker {
 
         let containers = self.conn
             .list_containers(Some(options))
-            .await?;
+            .await
+            .context("list containers")?;
 
         Ok(containers)
     }
