@@ -154,7 +154,8 @@ mod tests {
     fn test_from_event_actor() {
         let id = "abc123".to_string();
         let attributes = HashMap::from([
-            ("docker-mdns.enable".to_string(), "false".to_string()),
+            ("docker-mdns.enable".to_string(), "true".to_string()),
+            ("docker-mdns.host".to_string(), "test.local test2.local".to_string()),
         ]);
 
         let input = EventActor {
@@ -166,6 +167,40 @@ mod tests {
 
         let expected = Config {
             id: id.into(),
+            state: State::Enabled,
+            hosts: Some(vec![
+                "test.local".into(),
+                "test2.local".into(),
+            ]),
+            ..Default::default()
+        };
+
+        assert_eq!(config, expected);
+    }
+
+    #[test]
+    fn test_new_from_id_attributes() {
+        let id = "abc123".to_string();
+        let attributes = HashMap::from([
+            ("docker-mdns.enable".to_string(), "true".to_string()),
+            ("docker-mdns.host".to_string(), "test.local test2.local".to_string()),
+        ]);
+
+        let some_id = Some(id.clone());
+        let some_attributes = Some(attributes);
+
+        let config = Config::new_from_id_attributes(
+            &some_id,
+            &some_attributes,
+        );
+
+        let expected = Config {
+            id: id.into(),
+            state: State::Enabled,
+            hosts: Some(vec![
+                "test.local".into(),
+                "test2.local".into(),
+            ]),
             ..Default::default()
         };
 
