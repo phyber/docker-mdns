@@ -102,7 +102,10 @@ impl Dbus {
         Ok(dbus)
     }
 
-    pub async fn publish(&mut self, config: &mdns::Config) -> Result<()> {
+    pub async fn publish<'a>(
+        &mut self,
+        config: &mdns::Config<'a>,
+    ) -> Result<()> {
         info!("Publishing config: {:?}", config);
 
         if !config.enabled() {
@@ -133,7 +136,7 @@ impl Dbus {
         for address in &addresses {
             debug!("AddAddress: {:?}", address);
 
-            for host in hosts {
+            for host in &hosts {
                 entry_group.add_address(
                     &self.avahi_interface_index,
                     PROTO_UNSPEC,
@@ -153,7 +156,10 @@ impl Dbus {
         Ok(())
     }
 
-    pub async fn unpublish(&mut self, config: &mdns::Config) -> Result<()> {
+    pub async fn unpublish<'a>(
+        &mut self,
+        config: &mdns::Config<'a>,
+    ) -> Result<()> {
         info!("Unpublishing config: {:?}", config);
 
         let id = config.id();

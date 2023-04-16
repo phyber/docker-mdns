@@ -1,7 +1,10 @@
 // Docker mDNS
 #![allow(clippy::redundant_field_names)]
 #![forbid(unsafe_code)]
-use anyhow::Result;
+use anyhow::{
+    Context,
+    Result,
+};
 use bollard::models::EventMessage;
 use futures_util::stream::StreamExt;
 use std::env;
@@ -71,17 +74,26 @@ async fn main() -> Result<()> {
     info!("Interface: {:?}", interface);
 
     // Get a dbus connection
-    let mut dbus = Dbus::new(interface).await?;
+    let mut dbus = Dbus::new(interface)
+        .await
+        .context("dbus connect")?;
 
     // Get a docker connection
-    let docker = Docker::new()?;
+    let docker = Docker::new()
+        .context("docker connect")?;
 
     // Before entering our main event loop, check if any existing containers
     // need DNS registering.
-    let startup_containers = docker.startup_scan().await?;
+    let startup_containers = docker
+        .startup_scan()
+        .await
+        .context("startup scan")?;
+
     for container in startup_containers {
         let config = mdns::Config::from(&container);
-        dbus.publish(&config).await?;
+        dbus.publish(&config)
+            .await
+            .context("startup scan publish")?;
     }
 
     // Now we listen for Docker events
@@ -91,7 +103,9 @@ async fn main() -> Result<()> {
 
     while let Some(event) = events.next().await {
         let event = event?;
-        handler(&mut dbus, &event).await?;
+        handler(&mut dbus, &event)
+            .await
+            .context("handler")?;
     }
 
     Ok(())
