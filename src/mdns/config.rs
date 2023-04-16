@@ -5,6 +5,7 @@ use bollard::models::{
 };
 use crate::mdns::State;
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::convert::AsRef;
 
 // Docker labels that we're interested in.
@@ -31,6 +32,56 @@ pub struct Config<'a> {
 // A basic impl that exposes some methods instead of allowing other code
 // direct access to struct members.
 impl<'a> Config<'a> {
+    // Called via the From impls.
+    fn new_from_id_attributes(
+        id: &'a Option<String>,
+        attributes: &'a Option<HashMap<String, String>>,
+    ) -> Self {
+        // The events that we're interested in should always come with a
+        // container ID.
+        let id = match id {
+            Some(id) => id,
+            None     => panic!("Expected actor id"),
+        };
+
+        match attributes {
+            None => {
+                // Basic Disabled configuration if we don't get any attributes
+                // (labels).
+                Self {
+                    id: id.into(),
+                    ..Self::default()
+                }
+            },
+            Some(attributes) => {
+                // We got attributes (labels), look harder to see if there's
+                // work to do.
+                let enable = attributes.get(DOCKER_MDNS_ENABLE);
+                let hosts = attributes.get(DOCKER_MDNS_HOST);
+                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE)
+                    .map(Cow::from);
+                let state = State::from(enable);
+
+                // Build a vec of hosts from the string we get from the label.
+                // These are the hostnames that will be published.
+                let hosts = hosts
+                    .map(|hosts| {
+                        hosts
+                            .split_whitespace()
+                            .map(Cow::from)
+                            .collect::<Vec<Cow<'a, str>>>()
+                    });
+
+                Self {
+                    hosts: hosts,
+                    id: id.into(),
+                    override_interface: override_interface,
+                    state: state,
+                }
+            }
+        }
+    }
+
     pub fn enabled(&self) -> bool {
         self.state == State::Enabled
     }
@@ -51,49 +102,7 @@ impl<'a> Config<'a> {
 // Takes an EventActor from Docker and turns it into an appropriate Config.
 impl<'a> From<&'a EventActor> for Config<'a> {
     fn from(eventactor: &'a EventActor) -> Self {
-        // The events that we're interested in should always come with a
-        // container ID.
-        let id = match &eventactor.id {
-            Some(id) => id,
-            None     => panic!("Expected actor id"),
-        };
-
-        match &eventactor.attributes {
-            None => {
-                // Basic Disabled configuration if we don't get any attributes
-                // (labels).
-                Self {
-                    id: id.into(),
-                    ..Self::default()
-                }
-            },
-            Some(attributes) => {
-                // We got attributes (labels), look harder to see if there's
-                // work to do.
-                let enable = attributes.get(DOCKER_MDNS_ENABLE);
-                let hosts = attributes.get(DOCKER_MDNS_HOST);
-                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE)
-                    .map(Cow::from);
-                let state = State::from(enable);
-
-                // Build a vec of hosts from the string we get from the label.
-                // These are the hostnames that will be published.
-                let hosts = hosts
-                    .map(|hosts| {
-                        hosts
-                            .split_whitespace()
-                            .map(Cow::from)
-                            .collect::<Vec<Cow<'a, str>>>()
-                    });
-
-                Self {
-                    hosts: hosts,
-                    id: id.into(),
-                    override_interface: override_interface,
-                    state: state,
-                }
-            }
-        }
+        Self::new_from_id_attributes(&eventactor.id, &eventactor.attributes)
     }
 }
 
@@ -102,48 +111,8 @@ impl<'a> From<&'a EventActor> for Config<'a> {
 // that.
 impl<'a> From<&'a ContainerSummary> for Config<'a> {
     fn from(summary: &'a ContainerSummary) -> Self {
-        let id = match &summary.id {
-            Some(id) => id,
-            None     => panic!("expected container id"),
-        };
-
         // Summary labels are the same as EventActor attributes
-        match &summary.labels {
-            None => {
-                // Basic Disabled configuration if we don't get any attributes
-                // (labels).
-                Self {
-                    id: id.into(),
-                    ..Self::default()
-                }
-            },
-            Some(attributes) => {
-                // We got attributes (labels), look harder to see if there's
-                // work to do.
-                let enable = attributes.get(DOCKER_MDNS_ENABLE);
-                let hosts = attributes.get(DOCKER_MDNS_HOST);
-                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE)
-                    .map(Cow::from);
-                let state = State::from(enable);
-
-                // Build a vec of hosts from the string we get from the label.
-                // These are the hostnames that will be published.
-                let hosts = hosts
-                    .map(|hosts| {
-                        hosts
-                            .split_whitespace()
-                            .map(Cow::from)
-                            .collect::<Vec<Cow<'a, str>>>()
-                    });
-
-                Self {
-                    hosts: hosts,
-                    id: id.into(),
-                    override_interface: override_interface,
-                    state: state,
-                }
-            }
-        }
+        Self::new_from_id_attributes(&summary.id, &summary.labels)
     }
 }
 
@@ -152,7 +121,6 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
-    // This test also indirectly tests From<&EventActor>
     #[test]
     fn test_from_container_summary() {
         let id = "abc123".to_string();
@@ -164,6 +132,28 @@ mod tests {
             id: Some(id.clone()),
             labels: Some(labels),
             ..Default::default()
+        };
+
+        let config = Config::from(&input);
+
+        let expected = Config {
+            id: id.into(),
+            ..Default::default()
+        };
+
+        assert_eq!(config, expected);
+    }
+
+    #[test]
+    fn test_from_event_actor() {
+        let id = "abc123".to_string();
+        let attributes = HashMap::from([
+            ("docker-mdns.enable".to_string(), "false".to_string()),
+        ]);
+
+        let input = EventActor {
+            id: Some(id.clone()),
+            attributes: Some(attributes),
         };
 
         let config = Config::from(&input);
