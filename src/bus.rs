@@ -133,7 +133,7 @@ impl Dbus {
         for address in &addresses {
             debug!("AddAddress: {:?}", address);
 
-            for host in hosts {
+            for host in &hosts {
                 entry_group.add_address(
                     &self.avahi_interface_index,
                     PROTO_UNSPEC,

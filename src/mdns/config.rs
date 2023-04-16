@@ -16,7 +16,7 @@ const DOCKER_MDNS_INTERFACE: &str = "docker-mdns.interface";
 pub struct Config<'a> {
     // Hosts taken from docker-mdns.host
     // These are the hostnames to be announced via Avahi.
-    hosts: Option<Vec<String>>,
+    hosts: Option<Vec<Cow<'a, str>>>,
 
     // The container ID that this Config is for.
     id: Cow<'a, str>,
@@ -35,8 +35,8 @@ impl<'a> Config<'a> {
         self.state == State::Enabled
     }
 
-    pub fn hosts(&self) -> &Option<Vec<String>> {
-        &self.hosts
+    pub fn hosts(&self) -> Option<Vec<&str>> {
+        self.hosts.as_ref().map(|v| v.iter().map(AsRef::as_ref).collect())
     }
 
     pub fn id(&self) -> &str {
@@ -82,8 +82,8 @@ impl<'a> From<&'a EventActor> for Config<'a> {
                     .map(|hosts| {
                         hosts
                             .split_whitespace()
-                            .map(String::from)
-                            .collect::<Vec<String>>()
+                            .map(Cow::from)
+                            .collect::<Vec<Cow<'a, str>>>()
                     });
 
                 Self {
@@ -132,8 +132,8 @@ impl<'a> From<&'a ContainerSummary> for Config<'a> {
                     .map(|hosts| {
                         hosts
                             .split_whitespace()
-                            .map(String::from)
-                            .collect::<Vec<String>>()
+                            .map(Cow::from)
+                            .collect::<Vec<Cow<'a, str>>>()
                     });
 
                 Self {
