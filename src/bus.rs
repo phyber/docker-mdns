@@ -102,7 +102,7 @@ impl Dbus {
         Ok(dbus)
     }
 
-    pub async fn publish(&mut self, config: &mdns::Config) -> Result<()> {
+    pub async fn publish<'a>(&mut self, config: &mdns::Config<'a>) -> Result<()> {
         info!("Publishing config: {:?}", config);
 
         if !config.enabled() {
@@ -153,7 +153,7 @@ impl Dbus {
         Ok(())
     }
 
-    pub async fn unpublish(&mut self, config: &mdns::Config) -> Result<()> {
+    pub async fn unpublish<'a>(&mut self, config: &mdns::Config<'a>) -> Result<()> {
         info!("Unpublishing config: {:?}", config);
 
         let id = config.id();

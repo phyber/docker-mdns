@@ -4,6 +4,7 @@ use bollard::models::{
     EventActor,
 };
 use crate::mdns::State;
+use std::borrow::Cow;
 
 // Docker labels that we're interested in.
 const DOCKER_MDNS_ENABLE: &str = "docker-mdns.enable";
@@ -11,13 +12,13 @@ const DOCKER_MDNS_HOST: &str = "docker-mdns.host";
 const DOCKER_MDNS_INTERFACE: &str = "docker-mdns.interface";
 
 #[derive(Debug, Default, Eq, PartialEq)]
-pub struct Config {
+pub struct Config<'a> {
     // Hosts taken from docker-mdns.host
     // These are the hostnames to be announced via Avahi.
     hosts: Option<Vec<String>>,
 
     // The container ID that this Config is for.
-    id: String,
+    id: Cow<'a, str>,
 
     // The override interface provided via docker-mdns.interface, if any.
     override_interface: Option<String>,
@@ -28,7 +29,7 @@ pub struct Config {
 
 // A basic impl that exposes some methods instead of allowing other code
 // direct access to struct members.
-impl Config {
+impl<'a> Config<'a> {
     pub fn enabled(&self) -> bool {
         self.state == State::Enabled
     }
@@ -47,12 +48,12 @@ impl Config {
 }
 
 // Takes an EventActor from Docker and turns it into an appropriate Config.
-impl From<&EventActor> for Config {
-    fn from(eventactor: &EventActor) -> Self {
+impl<'a> From<&'a EventActor> for Config<'a> {
+    fn from(eventactor: &'a EventActor) -> Self {
         // The events that we're interested in should always come with a
         // container ID.
         let id = match &eventactor.id {
-            Some(id) => id.clone(),
+            Some(id) => id,
             None     => panic!("Expected actor id"),
         };
 
@@ -61,7 +62,7 @@ impl From<&EventActor> for Config {
                 // Basic Disabled configuration if we don't get any attributes
                 // (labels).
                 Self {
-                    id: id,
+                    id: id.into(),
                     ..Self::default()
                 }
             },
@@ -85,7 +86,7 @@ impl From<&EventActor> for Config {
 
                 Self {
                     hosts: hosts,
-                    id: id,
+                    id: id.into(),
                     override_interface: override_interface.cloned(),
                     state: state,
                 }
@@ -97,19 +98,49 @@ impl From<&EventActor> for Config {
 // This is called from docker.rs. Instead of implementing the above logic all
 // over again, we quickly make an EventActor and call the above from() based on
 // that.
-impl From<&ContainerSummary> for Config {
-    fn from(summary: &ContainerSummary) -> Self {
+impl<'a> From<&'a ContainerSummary> for Config<'a> {
+    fn from(summary: &'a ContainerSummary) -> Self {
         let id = match &summary.id {
-            Some(id) => Some(id.clone()),
+            Some(id) => id,
             None     => panic!("expected container id"),
         };
 
-        let actor = EventActor {
-            attributes: summary.labels.clone(),
-            id: id,
-        };
+        // Summary labels are the same as EventActor attributes
+        match &summary.labels {
+            None => {
+                // Basic Disabled configuration if we don't get any attributes
+                // (labels).
+                Self {
+                    id: id.into(),
+                    ..Self::default()
+                }
+            },
+            Some(attributes) => {
+                // We got attributes (labels), look harder to see if there's
+                // work to do.
+                let enable = attributes.get(DOCKER_MDNS_ENABLE);
+                let hosts = attributes.get(DOCKER_MDNS_HOST);
+                let override_interface = attributes.get(DOCKER_MDNS_INTERFACE);
+                let state = State::from(enable);
 
-        Self::from(&actor)
+                // Build a vec of hosts from the string we get from the label.
+                // These are the hostnames that will be published.
+                let hosts = hosts
+                    .map(|hosts| {
+                        hosts
+                            .split_whitespace()
+                            .map(String::from)
+                            .collect::<Vec<String>>()
+                    });
+
+                Self {
+                    hosts: hosts,
+                    id: id.into(),
+                    override_interface: override_interface.cloned(),
+                    state: state,
+                }
+            }
+        }
     }
 }
 
@@ -135,7 +166,7 @@ mod tests {
         let config = Config::from(&input);
 
         let expected = Config {
-            id: id.clone(),
+            id: id.into(),
             ..Default::default()
         };
 
