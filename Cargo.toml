@@ -22,14 +22,14 @@ features = [
 ]
 
 [dependencies.tokio]
-version = "1.26"
+version = "1.27"
 features = [
     "macros",
     "rt-multi-thread",
 ]
 
 [dependencies.zbus]
-version = "3.11"
+version = "3.12"
 default-features = false
 features = [
     "tokio",
