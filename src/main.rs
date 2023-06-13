@@ -1,5 +1,4 @@
 // Docker mDNS
-#![allow(clippy::redundant_field_names)]
 #![forbid(unsafe_code)]
 use anyhow::{
     Context,
@@ -74,7 +73,7 @@ async fn main() -> Result<()> {
     info!("Interface: {:?}", interface);
 
     // Get a dbus connection
-    let mut dbus = Dbus::new(interface)
+    let mut dbus = Box::pin(Dbus::new(interface))
         .await
         .context("dbus connect")?;
 

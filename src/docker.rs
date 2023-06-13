@@ -26,7 +26,7 @@ impl Docker {
         let conn = bollard::Docker::connect_with_unix_defaults()?;
 
         let docker = Self {
-            conn: conn,
+            conn,
         };
 
         Ok(docker)
@@ -41,7 +41,7 @@ impl Docker {
         ]);
 
         let options = EventsOptions {
-            filters: filters,
+            filters,
             since: None,
             until: None,
         };
@@ -56,7 +56,7 @@ impl Docker {
     -> Result<Vec<ContainerSummary>> {
         let options = ListContainersOptions {
             all: true,
-            filters: filters,
+            filters,
             ..Default::default()
         };
 

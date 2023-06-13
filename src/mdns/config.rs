@@ -75,10 +75,10 @@ impl<'a> Config<'a> {
                     .map(Cow::from);
 
                 Self {
-                    hosts: hosts,
+                    hosts,
                     id: id.into(),
-                    override_interface: override_interface,
-                    state: state,
+                    override_interface,
+                    state,
                 }
             }
         }
