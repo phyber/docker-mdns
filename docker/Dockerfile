@@ -1,7 +1,7 @@
 # vim:ft=dockerfile:
-ARG DEBIAN_VERSION
+ARG BASE_IMAGE
 ARG IMAGE_ARCH
-FROM --platform=linux/${IMAGE_ARCH} debian:${DEBIAN_VERSION}
+FROM --platform=linux/${IMAGE_ARCH} ${BASE_IMAGE}
 
 ARG TARGET
 COPY target/${TARGET}/release/docker-mdns /usr/local/bin/
