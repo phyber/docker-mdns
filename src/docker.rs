@@ -82,7 +82,7 @@ impl Docker {
 
         let containers = self.list_containers(filters).await?;
 
-        debug!("Startup container scan found: {:?}", containers);
+        debug!("Startup container scan found: {containers:?}");
 
         Ok(containers)
     }

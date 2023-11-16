@@ -74,6 +74,7 @@ fn interface_addresses(interface: &str) -> Result<Vec<IpAddr>> {
     Ok(addrs)
 }
 
+#[derive(Debug)]
 pub struct Dbus {
     avahi_interface_index: i32,
     conn: Connection,
@@ -83,7 +84,7 @@ pub struct Dbus {
 
 impl Dbus {
     pub async fn new(interface_name: String) -> Result<Self> {
-        info!("Getting D-Bus handle for interface: {}", interface_name);
+        info!("Getting D-Bus handle for interface: {interface_name}");
 
         let conn = Connection::system().await?;
 
@@ -106,15 +107,14 @@ impl Dbus {
         &mut self,
         config: &mdns::Config<'a>,
     ) -> Result<()> {
-        info!("Publishing config: {:?}", config);
+        info!("Publishing config: {config:?}");
 
         if !config.enabled() {
             return Ok(());
         }
 
-        let hosts = match config.hosts() {
-            Some(hosts) => hosts,
-            None        => return Ok(()),
+        let Some(hosts) = config.hosts() else {
+            return Ok(())
         };
 
         // Get a new group to publish under
@@ -134,7 +134,7 @@ impl Dbus {
         let addresses = interface_addresses(interface_name)?;
 
         for address in &addresses {
-            debug!("AddAddress: {:?}", address);
+            debug!("AddAddress: {address:?}");
 
             for host in &hosts {
                 entry_group.add_address(
@@ -160,13 +160,12 @@ impl Dbus {
         &mut self,
         config: &mdns::Config<'a>,
     ) -> Result<()> {
-        info!("Unpublishing config: {:?}", config);
+        info!("Unpublishing config: {config:?}");
 
         let id = config.id();
 
-        let group_path = match self.published.remove(id) {
-            Some(group_path) => group_path,
-            None             => return Ok(()),
+        let Some(group_path) = self.published.remove(id) else {
+            return Ok(())
         };
 
         let entry_group = EntryGroupProxy::builder(&self.conn)
@@ -177,7 +176,7 @@ impl Dbus {
         entry_group.reset().await?;
         entry_group.free().await?;
 
-        debug!("Unpublished: {}", id);
+        debug!("Unpublished: {id}");
 
         Ok(())
     }

@@ -28,7 +28,7 @@ use docker::Docker;
 //
 // Any other events are ignored.
 async fn handler(bus: &mut Dbus, event: &EventMessage) -> Result<()> {
-    debug!("handler event: {:?}", event);
+    debug!("handler event: {event:?}");
 
     // We only deal with Die and Start at the moment. Ignore any Other action.
     let action = match Action::from(&event.action) {
@@ -36,9 +36,8 @@ async fn handler(bus: &mut Dbus, event: &EventMessage) -> Result<()> {
         wanted        => wanted,
     };
 
-    let actor = match &event.actor {
-        Some(actor) => actor,
-        None        => return Ok(()),
+    let Some(actor) = &event.actor else {
+        return Ok(())
     };
 
     let mdns_config = mdns::Config::from(actor);
@@ -62,15 +61,12 @@ async fn main() -> Result<()> {
     set_default_log_level();
     tracing_subscriber::fmt::init();
 
-    let interface = if let Some(interface) = env::args().nth(1) {
-        interface
-    }
-    else {
+    let Some(interface) = env::args().nth(1) else {
         eprintln!("Provide an interface to listen on");
         ::std::process::exit(1);
     };
 
-    info!("Interface: {:?}", interface);
+    info!("Interface: {interface:?}");
 
     // Get a dbus connection
     let mut dbus = Box::pin(Dbus::new(interface))

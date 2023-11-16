@@ -39,9 +39,8 @@ impl<'a> Config<'a> {
     ) -> Self {
         // The events that we're interested in should always come with a
         // container ID.
-        let id = match id {
-            Some(id) => id,
-            None     => panic!("Expected actor id"),
+        let Some(id) = id else {
+            panic!("Expected actor id")
         };
 
         match attributes {
