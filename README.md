@@ -46,9 +46,6 @@ services:
     container_name: "docker-mdns"
     image: "phyber/docker-mdns:aarch64-latest"
 
-    # Run via an init process to handle signals nicely.
-    init: true
-
     # We need to be able to see the real IP addresses on the host, so we need
     # host networking mode.
     network_mode: "host"
