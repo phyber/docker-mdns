@@ -9,8 +9,8 @@ use tracing::{
     info,
 };
 use zbus::{
-    dbus_proxy,
     fdo,
+    proxy,
     Connection,
 };
 use zbus::zvariant::OwnedObjectPath;
@@ -18,7 +18,7 @@ use zbus::zvariant::OwnedObjectPath;
 const FLAG_NO_REVERSE: u32 = 16;
 const PROTO_UNSPEC: i32 = -1;
 
-#[dbus_proxy(
+#[proxy(
     default_path = "/",
     default_service = "org.freedesktop.Avahi",
     interface = "org.freedesktop.Avahi.Server",
@@ -34,7 +34,7 @@ trait AvahiServer {
     ) -> fdo::Result<i32>;
 }
 
-#[dbus_proxy(
+#[proxy(
     default_service = "org.freedesktop.Avahi",
     interface = "org.freedesktop.Avahi.EntryGroup",
 )]
