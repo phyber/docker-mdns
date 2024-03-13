@@ -7,7 +7,7 @@ Traefik or NGINX.
 
 ## Minimum Supported Rust Version (MSRV)
 
-The MSRV for this project is currently v1.64.0
+The MSRV for this project is currently v1.75.0
 
 ## Configuration
 
@@ -44,7 +44,7 @@ version: "3.8"
 services:
   mdns:
     container_name: "docker-mdns"
-    image: "phyber/docker-mdns:aarch64-latest"
+    image: "ghcr.io/phyber/docker-mdns:aarch64-latest"
 
     # We need to be able to see the real IP addresses on the host, so we need
     # host networking mode.

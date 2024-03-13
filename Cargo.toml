@@ -12,7 +12,7 @@ lto = true
 
 [dependencies]
 anyhow = "1.0"
-bollard = "0.15"
+bollard = "0.16"
 futures-core = "0.3"
 futures-util = "0.3"
 if-addrs = "0.11"
