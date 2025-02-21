@@ -11,6 +11,10 @@ use tracing::{
     debug,
     info,
 };
+use tracing_subscriber::filter::{
+    EnvFilter,
+    LevelFilter,
+};
 
 mod action;
 mod bus;
@@ -50,16 +54,15 @@ async fn handler(bus: &mut Dbus, event: &EventMessage) -> Result<()> {
     }
 }
 
-fn set_default_log_level() {
-    if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "docker_mdns=info");
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<()> {
-    set_default_log_level();
-    tracing_subscriber::fmt::init();
+    let env_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::INFO.into())
+        .from_env()?;
+
+    tracing_subscriber::fmt()
+        .with_env_filter(env_filter)
+        .init();
 
     let Some(interface) = env::args().nth(1) else {
         eprintln!("Provide an interface to listen on");
