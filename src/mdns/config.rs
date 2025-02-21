@@ -34,8 +34,8 @@ pub struct Config<'a> {
 impl<'a> Config<'a> {
     // Called via the From impls.
     fn new_from_id_attributes(
-        id: &'a Option<String>,
-        attributes: &'a Option<HashMap<String, String>>,
+        id: Option<&'a String>,
+        attributes: Option<&'a HashMap<String, String>>,
     ) -> Self {
         // The events that we're interested in should always come with a
         // container ID.
@@ -107,7 +107,10 @@ impl<'a> Config<'a> {
 // Takes an EventActor from Docker and turns it into an appropriate Config.
 impl<'a> From<&'a EventActor> for Config<'a> {
     fn from(eventactor: &'a EventActor) -> Self {
-        Self::new_from_id_attributes(&eventactor.id, &eventactor.attributes)
+        Self::new_from_id_attributes(
+            eventactor.id.as_ref(),
+            eventactor.attributes.as_ref(),
+        )
     }
 }
 
@@ -117,7 +120,10 @@ impl<'a> From<&'a EventActor> for Config<'a> {
 impl<'a> From<&'a ContainerSummary> for Config<'a> {
     fn from(summary: &'a ContainerSummary) -> Self {
         // Summary labels are the same as EventActor attributes
-        Self::new_from_id_attributes(&summary.id, &summary.labels)
+        Self::new_from_id_attributes(
+            summary.id.as_ref(),
+            summary.labels.as_ref(),
+        )
     }
 }
 
@@ -189,8 +195,8 @@ mod tests {
         let some_attributes = Some(attributes);
 
         let config = Config::new_from_id_attributes(
-            &some_id,
-            &some_attributes,
+            some_id.as_ref(),
+            some_attributes.as_ref(),
         );
 
         let expected = Config {

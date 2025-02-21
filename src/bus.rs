@@ -103,9 +103,9 @@ impl Dbus {
         Ok(dbus)
     }
 
-    pub async fn publish<'a>(
+    pub async fn publish(
         &mut self,
-        config: &mdns::Config<'a>,
+        config: &mdns::Config<'_>,
     ) -> Result<()> {
         info!("Publishing config: {config:?}");
 
@@ -156,9 +156,9 @@ impl Dbus {
         Ok(())
     }
 
-    pub async fn unpublish<'a>(
+    pub async fn unpublish(
         &mut self,
-        config: &mdns::Config<'a>,
+        config: &mdns::Config<'_>,
     ) -> Result<()> {
         info!("Unpublishing config: {config:?}");
 
