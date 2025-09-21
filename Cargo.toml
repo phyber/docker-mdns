@@ -2,7 +2,7 @@
 name = "docker-mdns"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.81.0"
+rust-version = "1.82.0"
 resolver = "2"
 license = "MIT OR Apache-2.0"
 
@@ -12,10 +12,10 @@ lto = true
 
 [dependencies]
 anyhow = "1.0"
-bollard = "0.18"
+bollard = "0.19"
 futures-core = "0.3"
 futures-util = "0.3"
-if-addrs = "0.13"
+if-addrs = "0.14"
 tracing = "0.1"
 
 [dependencies.serde]
@@ -25,7 +25,7 @@ features = [
 ]
 
 [dependencies.tokio]
-version = "1.32"
+version = "1.47"
 features = [
     "macros",
     "rt-multi-thread",
@@ -38,7 +38,7 @@ features = [
 ]
 
 [dependencies.zbus]
-version = "5.0.1"
+version = "5.11.0"
 default-features = false
 features = [
     "tokio",

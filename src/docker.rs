@@ -3,13 +3,15 @@ use anyhow::{
     Context,
     Result,
 };
-use bollard::container::ListContainersOptions;
 use bollard::errors::Error;
 use bollard::models::{
     ContainerSummary,
     EventMessage,
 };
-use bollard::system::EventsOptions;
+use bollard::query_parameters::{
+    EventsOptions,
+    ListContainersOptions,
+};
 use futures_core::Stream;
 use std::collections::HashMap;
 use tracing::{
@@ -36,12 +38,23 @@ impl Docker {
     -> impl Stream<Item = ::std::result::Result<EventMessage, Error>> {
         // We're only interested in container events.
         let filters = HashMap::from([
-            ("action", vec!["die", "start"]),
-            ("type", vec!["container"]),
+            (
+                String::from("action"),
+                vec![
+                    String::from("die"),
+                    String::from("start"),
+                ],
+            ),
+            (
+                String::from("type"),
+                vec![
+                    String::from("container"),
+                ],
+            ),
         ]);
 
         let options = EventsOptions {
-            filters,
+            filters: Some(filters),
             since: None,
             until: None,
         };
@@ -51,7 +64,7 @@ impl Docker {
 
     pub async fn list_containers(
         &self,
-        filters: HashMap<&str, Vec<&str>>,
+        filters: Option<HashMap<String, Vec<String>>>,
     )
     -> Result<Vec<ContainerSummary>> {
         let options = ListContainersOptions {
@@ -76,11 +89,24 @@ impl Docker {
         // We want to setup hostnames for any container that's in any kind of
         // "up" state.
         let filters = HashMap::from([
-            ("label", vec!["docker-mdns.enable=true"]),
-            ("status", vec!["created", "paused", "restarting", "running"]),
+            (
+                String::from("label"),
+                vec![
+                    String::from("docker-mdns.enable=true"),
+                ],
+            ),
+            (
+                String::from("status"),
+                vec![
+                    String::from("created"),
+                    String::from("paused"),
+                    String::from("restarting"),
+                    String::from("running"),
+                ],
+            ),
         ]);
 
-        let containers = self.list_containers(filters).await?;
+        let containers = self.list_containers(Some(filters)).await?;
 
         debug!("Startup container scan found: {containers:?}");
 

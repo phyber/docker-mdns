@@ -7,7 +7,7 @@ Traefik or NGINX.
 
 ## Minimum Supported Rust Version (MSRV)
 
-The MSRV for this project is currently v1.81.0
+The MSRV for this project is currently v1.82.0
 
 ## Configuration
 
@@ -39,8 +39,6 @@ in a container:
 
 ```yaml
 ---
-version: "3.8"
-
 services:
   mdns:
     container_name: "docker-mdns"
@@ -69,8 +67,6 @@ configured mDNS hostname:
 
 ```yaml
 ---
-version: "3.8"
-
 services:
   traefik:
     container_name: "traefik"
